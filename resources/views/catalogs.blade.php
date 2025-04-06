@@ -68,7 +68,7 @@
         /* Main content styles */
         .catalog-selection-page {
             flex: 1;
-            background: #121246;
+            background: #f9f8f4;
             min-height: 100vh;
             padding-left: 0px;
             transition: padding-left 0.3s ease-in-out;
@@ -79,14 +79,17 @@
         }
 
         .rectangle-5 {
-            background: #d4a373;
+            background: #ded9c3;
             width: 100%;
             height: 80px;
-            position: fixed;
+            position: fixed; /* Kept as fixed per original design */
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
             z-index: 1;
+            display: flex; /* Added to center the catalogs text */
+            justify-content: center; /* Horizontally center */
+            align-items: center; /* Vertically center */
         }
 
         .catalogs {
@@ -95,8 +98,6 @@
             font-family: "Inter-Regular", sans-serif;
             font-size: 28px;
             font-weight: 600;
-            position: relative;
-            top: 25px;
             z-index: 2;
         }
 
@@ -162,7 +163,7 @@
         }
 
         .genre-card a {
-            color: #000000;
+            color: #121246;
             text-align: center;
             font-family: "Inter-Regular", sans-serif;
             font-size: 20px;
@@ -188,11 +189,11 @@
             margin-bottom: 40px;
             font-family: "Inter-Regular", sans-serif;
             font-size: 14px;
-            color: #d4a373;
+            color: #ded9c3;
         }
 
         .pagination a, .pagination span {
-            color: #d4a373;
+            color: #121246;
             padding: 4px 8px;
             text-decoration: none;
             margin: 0 4px;
@@ -206,7 +207,7 @@
         }
 
         .pagination .current {
-            background-color: #b5835a;
+            background-color: #ded9c3;
             color: #121246;
             padding: 4px 8px;
             border-radius: 4px;
@@ -307,8 +308,9 @@
             <button class="menu-button">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <div class="rectangle-5"></div>
-            <div class="catalogs">CATALOGS</div>
+            <div class="rectangle-5">
+                <div class="catalogs">CATALOGS</div>
+            </div>
             <div class="search-container">
                 <form method="GET" action="{{ route('catalogs') }}" class="rectangle-7">
                     <input type="text" name="search" class="search-input" placeholder="Search genres..." value="{{ request('search') }}" />

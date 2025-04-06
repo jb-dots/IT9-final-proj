@@ -2,19 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Book; // Assuming you have a Book model
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Routing\Controller as BaseController;
 
-abstract class Controller
+class Controller extends BaseController
 {
-    //
-}
-
-class DashboardController extends Controller
-{
-    public function index()
-    {
-        $books = Book::all(); // Or however you want to fetch your books
-        return view('dashboard', ['books' => $books]);
-    }
+    use AuthorizesRequests, ValidatesRequests;
 }

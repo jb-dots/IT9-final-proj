@@ -62,13 +62,13 @@
         }
 
         .menu-button:hover {
-            color: #b5835a;
+            color: #121246;
         }
 
         /* Main content styles */
         .favorites-page {
             flex: 1;
-            background: #121246;
+            background: #f0f0e4;
             min-height: 100vh;
             padding-left: 0px;
             transition: padding-left 0.3s ease-in-out;
@@ -79,14 +79,17 @@
         }
 
         .rectangle-5 {
-            background: #d4a373;
+            background: #ded9c3;
             width: 100%;
             height: 80px;
-            position: fixed;
+            position: fixed; /* Kept as fixed per original design */
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
             z-index: 1;
+            display: flex; /* Added to center the favorites text */
+            justify-content: center; /* Horizontally center */
+            align-items: center; /* Vertically center */
         }
 
         .favorites {
@@ -95,8 +98,6 @@
             font-family: "Inter-Regular", sans-serif;
             font-size: 28px;
             font-weight: 600;
-            position: relative;
-            top: 25px;
             z-index: 2;
         }
 
@@ -136,7 +137,7 @@
 
         /* Favorites container */
         .favorites-content {
-            background: #d4a373;
+            background: #b5835a;
             border-radius: 24px;
             padding: 20px;
             margin: 0 20px 40px;
@@ -265,12 +266,13 @@
             <button class="menu-button">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <div class="rectangle-5"></div>
-            <div class="favorites">FAVORITES</div>
+            <div class="rectangle-5">
+                <div class="favorites">FAVORITES</div>
+            </div>
             <div class="search-container">
                 <div class="rectangle-7">
                     <input type="text" class="search-input" placeholder="Search favorites..." />
-                    <img class="magnifying-1" src="{{ asset('images/magnifying-10.png') }}" alt="Search" />
+                    <img class="magnifying-1" src="{{ asset('images/logo1.png') }}" alt="Search" />
                 </div>
             </div>
             <div class="favorites-content">

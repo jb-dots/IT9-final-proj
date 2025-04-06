@@ -19,7 +19,7 @@
         .component-1 {
             width: 250px;
             height: 100vh; /* Ensure it takes full viewport height */
-            background: #121246;
+            background: #ded9c3;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -30,7 +30,7 @@
         .rectangle-3 {
             position: absolute;
             inset: 0;
-            background: #121246;
+            background: #ded9c3;
             z-index: 1;
         }
 
@@ -45,7 +45,7 @@
 
         /* Title styling */
         .grand-archives {
-            color: #ffffff;
+            color: #121246;
             text-align: center;
             font-family: "JacquesFrancoisShadow-Regular", sans-serif;
             font-size: 36px;
@@ -68,7 +68,7 @@
             justify-content: center;
             width: 100%;
             height: 100%;
-            color: #ffffff;
+            color: #121246;
             font-family: "Inter-Regular", sans-serif;
             font-size: 20px;
             font-weight: 400;
@@ -78,13 +78,13 @@
 
         .nav-link:hover {
             background-color: rgba(181, 131, 90, 0.2);
-            color: #d4a373;
+            color: #121246;
             transform: translateX(5px); /* Subtle movement on hover */
         }
 
         /* Active link styling */
         .nav-link.active {
-            background-color: #d4a373;
+            background-color: #b5835a;
             color: #121246;
         }
 
@@ -114,7 +114,7 @@
 <body>
     <div class="component-1">
         <div class="rectangle-3"></div>
-        <img class="logo-1-removebg-preview-1" src="{{ asset('images/logo-1-removebg-preview-10.png') }}" alt="Grand Archives Logo" />
+        <img src="{{ asset('images/logo1.png') }}" alt="Logo" class="logo-1-removebg-preview-1"/>
         <div class="grand-archives">GRAND ARCHIVES</div>
         <div class="nav-item">
             <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">Home</a>

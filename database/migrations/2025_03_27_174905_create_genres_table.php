@@ -10,7 +10,7 @@ class CreateGenresTable extends Migration
     {
         Schema::create('genres', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique(); // Genre name (e.g., "Fantasy", "Sci-fi")
+            $table->string('name')->unique();
             $table->timestamps();
         });
     }

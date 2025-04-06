@@ -19,7 +19,7 @@
         body, html {
             height: 100%;
             font-family: "Inter-Regular", sans-serif;
-            background: #121246;
+            background: #ded9c3;
             color: #fff;
             overflow-x: hidden;
         }
@@ -62,13 +62,13 @@
         }
 
         .menu-button:hover {
-            color: #b5835a;
+            color: #121246;
         }
 
         /* Main content styles */
         .transaction-page {
             flex: 1;
-            background: #121246;
+            background: #f0f0e4;
             min-height: 100vh;
             padding-left: 0px;
             transition: padding-left 0.3s ease-in-out;
@@ -79,14 +79,17 @@
         }
 
         .rectangle-5 {
-            background: #d4a373;
+            background: #ded9c3;
             width: 100%;
             height: 80px;
-            position: fixed;
+            position: fixed; /* Kept as fixed per original design */
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
             z-index: 1;
+            display: flex; /* Added to center the transaction text */
+            justify-content: center; /* Horizontally center */
+            align-items: center; /* Vertically center */
         }
 
         .transaction {
@@ -95,14 +98,12 @@
             font-family: "Inter-Regular", sans-serif;
             font-size: 28px;
             font-weight: 600;
-            position: relative;
-            top: 25px;
             z-index: 2;
         }
 
         /* Due amount section */
         .due-amount-section {
-            background: #c2a379;
+            background: #d9d9d9;
             border-radius: 12px;
             width: 100%;
             max-width: 863px;
@@ -123,14 +124,14 @@
 
         /* Books that are due sections */
         .books-due-section {
-            background: #341c1c;
+            background: #b5835a;
             border-radius: 12px;
             padding: 20px;
             margin: 0 20px 40px;
         }
 
         .books-that-are-due {
-            color: #d4a373;
+            color: #121246;
             font-family: "Inter-Regular", sans-serif;
             font-size: 24px;
             font-weight: 400;
@@ -252,8 +253,9 @@
             <button class="menu-button">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <div class="rectangle-5"></div>
-            <div class="transaction">TRANSACTION</div>
+            <div class="rectangle-5">
+                <div class="transaction">BORROWED BOOKS</div>
+            </div>
             <div class="due-amount-section">
                 <div class="due-amount-here">
                     Due Amount: ${{ number_format($dueAmount, 2) }}
@@ -271,7 +273,7 @@
                     </div>
                 @endforeach
                 @if($dueBooks->isEmpty())
-                    <p style="text-align: center; color: #d4a373;">No books are currently due.</p>
+                    <p style="text-align: center; color: #121246;">No books are currently due.</p>
                 @endif
             </div>
             <div class="books-due-section">
@@ -286,7 +288,7 @@
                     </div>
                 @endforeach
                 @if($returnedBooks->isEmpty())
-                    <p style="text-align: center; color: #d4a373;">No books have been recently returned.</p>
+                    <p style="text-align: center; color: #121246;">No books have been recently returned.</p>
                 @endif
             </div>
         </div>

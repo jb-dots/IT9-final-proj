@@ -1,3 +1,4 @@
+<!-- resources/views/dashboard.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,7 +33,7 @@
         /* Navigation styles */
         .navigation {
             width: 250px;
-            background: #121246;
+            background: #ded9c3;
             height: 100vh;
             position: fixed;
             left: -250px; /* Hidden by default */
@@ -60,13 +61,13 @@
         }
 
         .menu-button:hover {
-            color: #b5835a;
+            color: #121246;
         }
 
         /* Main content styles */
         .home-page {
             flex: 1;
-            background: #121246;
+            background: #f0f0e4;
             min-height: 100vh;
             padding-left: 60px; /* Space for menu button */
             transition: padding-left 0.3s ease-in-out;
@@ -77,14 +78,17 @@
         }
 
         .rectangle-5 {
-            background: #d4a373;
+            background: #ded9c3;
             width: 100%;
             height: 80px;
-            position: fixed;
+            position: fixed; /* Kept as fixed per original design */
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
             z-index: 1;
+            display: flex; /* Added to center the home-title text */
+            justify-content: center; /* Horizontally center */
+            align-items: center; /* Vertically center */
         }
 
         .home-title {
@@ -93,14 +97,12 @@
             font-family: "Inter-Regular", sans-serif;
             font-size: 28px;
             font-weight: 600;
-            position: relative;
-            top: 25px;
             z-index: 2;
         }
 
         /* Section headers */
-        .trending, .trending2, .trending3 {
-            color: #d4a373;
+        .trending, .trending2, .trending3, .borrowed-books {
+            color: #121246;
             font-family: "Inter-Regular", sans-serif;
             font-size: 24px;
             font-weight: 400;
@@ -123,7 +125,7 @@
         .book-card {
             width: 100%;
             height: 250px;
-            background: #712222;
+            background: #b5835a;
             border-radius: 15px;
             border: 1px solid #b5835a;
             overflow: hidden;
@@ -153,6 +155,49 @@
             text-overflow: ellipsis;
         }
 
+        /* Borrowed books table styles */
+        .borrowed-table {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            border-collapse: collapse;
+            background: #ded9c3;
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .borrowed-table th, .borrowed-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #b5835a;
+        }
+
+        .borrowed-table th {
+            background: #d4a373;
+            color: #121246;
+            font-weight: 600;
+        }
+
+        .borrowed-table td {
+            color: #121246;
+        }
+
+        .overdue {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .overdue-notice {
+            background: #ff6b6b;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            margin: 20px auto;
+            max-width: 1100px;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .home-page {
@@ -167,7 +212,7 @@
                 font-size: 22px;
             }
 
-            .trending, .trending2, .trending3 {
+            .trending, .trending2, .trending3, .borrowed-books {
                 font-size: 20px;
             }
 
@@ -186,6 +231,11 @@
             .book-card p {
                 font-size: 12px;
             }
+
+            .borrowed-table th, .borrowed-table td {
+                padding: 8px;
+                font-size: 14px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -201,6 +251,11 @@
                 left: 10px;
                 top: 15px;
             }
+
+            .borrowed-table th, .borrowed-table td {
+                padding: 6px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -213,24 +268,80 @@
             <button class="menu-button">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <div class="rectangle-5"></div>
-            <div class="home-title">DASHBOARD</div>
+            <div class="rectangle-5">
+                <div class="home-title">DASHBOARD</div>
+            </div>
+
+            @if($overdueCount > 0)
+                <div class="overdue-notice">
+                    You have {{ $overdueCount }} overdue book(s)! Please return them as soon as possible.
+                </div>
+            @endif
+
             <div class="trending">Trending</div>
             <div class="book-container">
-                @foreach($books as $book)
+                @forelse($books as $book)
                     <div class="book-card">
-                        <img src="{{ asset('images/' . $book->image) }}" alt="{{ $book->title }}">
+                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
                         <p>{{ $book->title }}</p>
                     </div>
-                @endforeach
+                @empty
+                    <p style="color: #121246; padding: 20px;">No trending books available.</p>
+                @endforelse
             </div>
+
+            <div class="borrowed-books">Your Borrowed Books</div>
+            <table class="borrowed-table">
+                <thead>
+                    <tr>
+                        <th>Book Title</th>
+                        <th>Borrowed At</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($borrowedBooks as $borrowedBook)
+                        <tr>
+                            <td>{{ $borrowedBook->book->title }}</td>
+                            <td>{{ $borrowedBook->borrowed_at->format('Y-m-d H:i') }}</td>
+                            <td>
+                                <span class="{{ $borrowedBook->status === 'borrowed' && $borrowedBook->due_date && $borrowedBook->due_date->isPast() ? 'overdue' : '' }}">
+                                    {{ $borrowedBook->due_date ? $borrowedBook->due_date->format('Y-m-d H:i') : 'N/A' }}
+                                </span>
+                            </td>
+                            <td>{{ ucfirst($borrowedBook->status) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #121246;">You have not borrowed any books.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
             <div class="trending2">Top Books</div>
             <div class="book-container">
-                <!-- Add books here -->
+                @forelse($topBooks as $book)
+                    <div class="book-card">
+                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+                        <p>{{ $book->title }}</p>
+                    </div>
+                @empty
+                    <p style="color: #121246; padding: 20px;">No top books available.</p>
+                @endforelse
             </div>
+
             <div class="trending3">Most Read</div>
             <div class="book-container">
-                <!-- Add books here -->
+                @forelse($mostReadBooks as $book)
+                    <div class="book-card">
+                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+                        <p>{{ $book->title }}</p>
+                    </div>
+                @empty
+                    <p style="color: #121246; padding: 20px;">No most read books available.</p>
+                @endforelse
             </div>
         </div>
     </div>

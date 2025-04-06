@@ -48,19 +48,6 @@
             left: 0;
         }
 
-        .menu-button {
-            position: fixed;
-            left: 20px;
-            top: 20px;
-            cursor: pointer;
-            z-index: 20;
-            color: #d4a373;
-            font-size: 28px;
-            background: transparent;
-            border: none;
-            transition: color 0.2s;
-        }
-
         .menu-button:hover {
             color: #b5835a;
         }
@@ -68,11 +55,13 @@
         /* Main content styles */
         .profile-page {
             flex: 1;
-            background: #121246;
+            background: #f0f0e4;
             min-height: 100vh;
-            padding-left: 60px;
+            padding-left: 0px;
+            padding-top: 80px; /* Added to prevent overlap */
             transition: padding-left 0.3s ease-in-out;
-            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-y: auto;
+            position: relative;
         }
 
         .profile-page.nav-active {
@@ -80,14 +69,17 @@
         }
 
         .rectangle-5 {
-            background: #d4a373;
+            background: #ded9c3;
             width: 100%;
             height: 80px;
-            position: fixed;
+            position: fixed; /* Changed to fixed */
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
             z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .profile {
@@ -96,14 +88,25 @@
             font-family: "Inter-Regular", sans-serif;
             font-size: 28px;
             font-weight: 600;
-            position: relative;
-            top: 25px;
             z-index: 2;
+        }
+
+        .menu-button {
+            position: absolute; /* Changed to absolute to stay within profile-page */
+            left: 20px;
+            top: 20px;
+            cursor: pointer;
+            z-index: 20;
+            color: #121246;
+            font-size: 28px;
+            background: transparent;
+            border: none;
+            transition: color 0.2s;
         }
 
         /* Profile content */
         .profile-content {
-            background: #d4a373;
+            background: #baba82;
             border-radius: 12px;
             width: 100%;
             max-width: 1203px;
@@ -143,7 +146,7 @@
             margin-top: 20px;
             width: 100%;
             max-width: 600px;
-            background: #c2a379;
+            background: #ded9c3;
             border-radius: 8px;
             padding: 20px;
             display: flex;
@@ -287,6 +290,15 @@
                 gap: 10px;
             }
         }
+        .images-1-1 {
+            border-radius: 85.5px;
+            width: 171px;
+            height: 171px;
+            object-fit: cover;
+            z-index: 5;
+            position: relative;
+            display: block; /* Ensure it’s visible */
+        }
     </style>
 </head>
 <body>
@@ -298,10 +310,26 @@
             <button class="menu-button">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <div class="rectangle-5"></div>
-            <div class="profile">PROFILE</div>
+            <div class="rectangle-5">
+                <div class="profile">PROFILE</div>
+            </div>
             <div class="profile-content">
-                <img class="images-1-1" src="{{ asset('images/' . (Auth::user()->profile_picture ?? 'images-1-10.png')) }}" alt="Profile Picture" />
+                @if (session('success'))
+                    <div class="alert alert-success">
+                        {{ session('success') }}
+                    </div>
+                @endif
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                <!-- Debug output -->
+                <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('images/logo1.png') }}" alt="Profile Picture" class="images-1-1" style="display: block; margin: 0 auto;"/>
                 <div class="dreamy-bull">{{ Auth::user()->name }}</div>
                 <div class="profile-info">Contact: {{ Auth::user()->contact_no ?? 'Not provided' }}</div>
                 <div class="profile-info">Email: {{ Auth::user()->email }}</div>

@@ -30,7 +30,7 @@
             box-sizing: border-box;
         }
         .log-in-page {
-            background: #121246;
+            background: #f0f0e4;
             height: 1024px;
             position: relative;
             overflow: hidden;
@@ -41,9 +41,9 @@
             position: absolute;
             left: 818px;
             top: 298px;
-            border: 2px solid #b5835a; /* Example border to make it look like a frame */
+            border: 2px solid #b5835a;
             border-radius: var(--corner-medium, 0px);
-            background: rgba(255, 255, 255, 0.1); /* Slight transparency for effect */
+            background: #ded9c3;
             overflow: visible;
         }
         .textbox {
@@ -63,14 +63,6 @@
         .password-textbox {
             left: 881px;
             top: 517px;
-        }
-        .frame-1 {
-            width: 100px;
-            height: 100px;
-            position: absolute;
-            left: 621px;
-            top: 746px;
-            overflow: hidden;
         }
         .component-2 {
             width: 160px;
@@ -106,18 +98,8 @@
             background: transparent;
             cursor: pointer;
         }
-        .frame {
-            width: 15.79%;
-            height: 47.06%;
-            position: absolute;
-            right: 78.29%;
-            left: 5.92%;
-            bottom: 27.45%;
-            top: 25.49%;
-            overflow: visible;
-        }
         .login-signup {
-            color: #0a0a23;
+            color: #121246;
             text-align: center;
             font-family: "Inter-Regular", sans-serif;
             font-size: 32px;
@@ -149,46 +131,19 @@
             top: 0%;
             height: 100%;
         }
-        .grand-archives {
-            color: #0a0a23;
-            text-align: left;
-            font-family: "Inter-Regular", sans-serif;
-            font-size: 40px;
-            font-weight: 400;
-            position: absolute;
-            left: 160px;
-            top: 28px;
-            width: 455px;
-            height: 49px;
-        }
-        .frame2 {
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            left: 887px;
-            top: 526px;
-            overflow: visible;
-        }
-        .frame3 {
-            width: 24px;
-            height: 24px;
-            position: absolute;
-            left: 886px;
-            top: 453px;
-            overflow: visible;
-        }
         .frame-rectangle-2 {
             width: 1441px;
             height: 107px;
             position: absolute;
             left: 0px;
             top: -6px;
-            border: 2px solid rgb(181, 131, 90); /* Example border to make it look like a frame */
-            background: rgba(219, 219, 219, 0.11); /* Slight transparency for effect */
+            border: 2px solid #b5835a;  
+            background: #ded9c3; 
             overflow: visible;
+            z-index: 1;
         }
         .grand-archives2 {
-            color: #0a0a23;
+            color: #121246;
             text-align: left;
             font-family: "JacquesFrancoisShadow-Regular", sans-serif;
             font-size: 40px;
@@ -198,34 +153,60 @@
             top: 18px;
             width: 455px;
             height: 49px;
+            z-index: 2;
         }
-        .logo-1-removebg-preview-3{
-            width: 706px;
-            height: 706px;
+        /* New styles for remember me checkbox */
+        .remember-me-container {
             position: absolute;
-            left: 35px;
-            top: 180px;
-            object-fit: cover;
-            aspect-ratio: 1;
+            left: 881px;
+            top: 570px;
+            display: flex;
+            align-items: center;
+            width: 304px;
+        }
+        .remember-me-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .remember-me-label {
+            color: #121246;
+            font-family: "Inter-Regular", sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+        }
+        /* New logo class */
+        .logo {
+            position: absolute;
+            left: 150px;
+            top: 315px;
+            width: 450px;
+            height: auto;
+            z-index: 3; /* Ensure it’s above other elements */
         }
     </style>
 </head>
-<body>
+<body>  
     <div class="log-in-page">
-        <div class="frame-rectangle-3"></div> <!-- Replaced rectangle-3 with a frame -->
+        <div class="frame-rectangle-3"></div>
+        <img src="{{ asset('images/logo1.png') }}" alt="Logo" class="logo"/>
         <form method="POST" action="{{ route('login') }}">
             @csrf
-            <input type="email" name="email"  class="textbox email-textbox" placeholder="Email" required>
+            <input type="email" name="email" class="textbox email-textbox" placeholder="Email" required>
             <input type="password" name="password" class="textbox password-textbox" placeholder="Password" required>
+            <div class="remember-me-container">
+                <input type="checkbox" name="remember" id="remember" class="remember-me-checkbox">
+                <label for="remember" class="remember-me-label">Remember me</label>
+            </div>
             <div class="component-2">
                 <div class="rectangle-6"></div>
                 <button type="submit" class="log-in-btn">LOG-IN</button>
-
             </div>
         </form>
         <div class="login-signup">LOGIN - SIGNUP</div>
         <div class="create-account">
-            <a href="{{ route('register') }}" class="create-account2">Create Account</a>
+            <a href="{{ route('register') }}" class="create-account2">Don't Have a Account?</a>  
         </div>
         <div class="grand-archives2">GRAND ARCHIVES</div>
         <div class="frame-rectangle-2"></div> 

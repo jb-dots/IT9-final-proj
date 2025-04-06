@@ -17,8 +17,16 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('contact_no')->nullable(); // Added contact number
+            $table->text('address')->nullable();     // Added address
+            $table->string('profile_picture')->nullable(); // Added profile picture
+            $table->string('membership_id')->nullable();   // Added membership ID
             $table->rememberToken();
-            $table->timestamps();
+            $table->timestamps(); 
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->boolean('is_admin')->default(false);
+            });
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
