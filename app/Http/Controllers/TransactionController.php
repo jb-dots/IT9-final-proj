@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\BorrowedBook;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 
 class TransactionController extends Controller
@@ -15,8 +16,14 @@ class TransactionController extends Controller
         // Fetch all borrowed books for the user
         $borrowedBooks = BorrowedBook::where('user_id', $user->id)
             ->with('book')
-            ->orderBy('borrowed_at', 'desc') // Assuming there's a borrowed_at column
+            ->orderBy('borrowed_at', 'desc')
             ->get();
+
+        // Calculate late fees dynamically for each borrowed book
+        foreach ($borrowedBooks as $borrowedBook) {
+            $borrowedBook->late_fee = $borrowedBook->calculateLateFee();
+            $borrowedBook->save();
+        }
 
         // Fetch books that are due (not returned yet and past due date)
         $dueBooks = BorrowedBook::where('user_id', $user->id)
@@ -30,15 +37,19 @@ class TransactionController extends Controller
             ->whereNotNull('returned_at')
             ->with('book')
             ->orderBy('returned_at', 'desc')
-            ->take(5) // Limit to 5 recent returns
+            ->take(5)
             ->get();
 
-        // Calculate due amount (e.g., based on late fees)
-        $dueAmount = $dueBooks->sum(function ($borrowedBook) {
-            $daysLate = now()->diffInDays($borrowedBook->due_date);
-            return $daysLate > 0 ? $daysLate * 0.50 : 0; // Example: $0.50 per day late
-        });
+        // Calculate total due amount from late fees
+        $dueAmount = $borrowedBooks->whereNull('returned_at')->sum('late_fee');
 
-        return view('transactions', compact('borrowedBooks', 'dueBooks', 'returnedBooks', 'dueAmount'));
+        // Fetch payment history
+        $paymentHistory = Transaction::where('user_id', $user->id)
+            ->where('type', 'payment')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        return view('transactions', compact('borrowedBooks', 'dueBooks', 'returnedBooks', 'dueAmount', 'paymentHistory'));
     }
 }

@@ -1,12 +1,14 @@
 <?php
-
+// app/Http/Controllers/AdminController.php
 namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Genre;
 use App\Models\BorrowedBook;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
@@ -17,8 +19,32 @@ class AdminController extends Controller
 
     public function index()
     {
+        $lateFeePerDay = 0.50; // $0.50 per day late
+
+        // Fetch all books
         $books = Book::with('genre')->get();
-        $borrowedBooks = BorrowedBook::with('book', 'user')->get();
+
+        // Fetch borrowed books with user information
+        $borrowedBooks = BorrowedBook::with(['book', 'user'])
+            ->orderBy('borrowed_at', 'desc')
+            ->get();
+
+        // Calculate and update late fees for overdue books
+        foreach ($borrowedBooks as $borrowedBook) {
+            if (!$borrowedBook->returned_at && $borrowedBook->due_date < now()) {
+                $daysLate = now()->diffInDays($borrowedBook->due_date);
+                $lateFee = $daysLate * $lateFeePerDay;
+                $borrowedBook->update(['late_fee' => $lateFee]);
+            } elseif (!$borrowedBook->returned_at && $borrowedBook->due_date >= now()) {
+                $borrowedBook->update(['late_fee' => 0]);
+            }
+        }
+
+        // Refresh the borrowed books collection
+        $borrowedBooks = BorrowedBook::with(['book', 'user'])
+            ->orderBy('borrowed_at', 'desc')
+            ->get();
+
         return view('admin.index', compact('books', 'borrowedBooks'));
     }
 
@@ -106,6 +132,31 @@ class AdminController extends Controller
             return redirect()->route('admin.index')->with('success', 'Borrow status updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to update borrow status: ' . $e->getMessage());
+        }
+    }
+
+    public function markAsPaid(Request $request, BorrowedBook $borrowedBook)
+    {
+        try {
+            // Ensure the book has a late fee
+            if ($borrowedBook->late_fee <= 0) {
+                return redirect()->route('admin.index')->with('error', 'No late fee to pay for this book.');
+            }
+
+            // Record the payment in the transactions table
+            Transaction::create([
+                'user_id' => $borrowedBook->user_id,
+                'amount' => $borrowedBook->late_fee,
+                'type' => 'payment',
+                'description' => 'Payment for late fee on book: ' . $borrowedBook->book->title,
+            ]);
+
+            // Clear the late fee
+            $borrowedBook->update(['late_fee' => 0]);
+
+            return redirect()->route('admin.index')->with('success', 'Late fee marked as paid.');
+        } catch (\Exception $e) {
+            return redirect()->route('admin.index')->with('error', 'Failed to mark late fee as paid: ' . $e->getMessage());
         }
     }
 }

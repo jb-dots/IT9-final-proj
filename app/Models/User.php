@@ -56,7 +56,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(BorrowedBook::class);
     }
-
+    
+    // app/Models/User.php
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+    
     /**
      * Check if the user is an admin.
      *
@@ -66,4 +72,5 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
 }

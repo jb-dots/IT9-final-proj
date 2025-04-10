@@ -82,14 +82,14 @@
             background: #ded9c3;
             width: 100%;
             height: 80px;
-            position: fixed; /* Kept as fixed per original design */
+            position: fixed;
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
             z-index: 1;
-            display: flex; /* Added to center the transaction text */
-            justify-content: center; /* Horizontally center */
-            align-items: center; /* Vertically center */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .transaction {
@@ -120,6 +120,20 @@
             font-family: "Inter-Regular", sans-serif;
             font-size: 32px;
             font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 20px; /* Space between due amount and Pay Now button */
+        }
+
+        .pay-button {
+            background: #6aa933;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-family: "Inter-Regular", sans-serif;
+            font-size: 14px;
         }
 
         /* Books that are due sections */
@@ -174,6 +188,10 @@
 
         .status.returned {
             background: #6aa933;
+        }
+
+        .status.borrowed {
+            background: #3498db; /* Blue for borrowed */
         }
 
         /* Responsive adjustments */
@@ -259,9 +277,12 @@
             <div class="due-amount-section">
                 <div class="due-amount-here">
                     Due Amount: ${{ number_format($dueAmount, 2) }}
+                    @if($dueAmount > 0)
+                        <button class="pay-button">Pay Now</button>
+                    @endif
                 </div>
             </div>
-            <!-- New Section: All Borrowed Books -->
+            <!-- All Borrowed Books -->
             <div class="books-due-section">
                 <div class="books-that-are-due">All Borrowed Books</div>
                 @foreach($borrowedBooks as $book)
@@ -271,6 +292,9 @@
                             <div class="due-date">Due Date: {{ $book->due_date->format('Y-m-d') }}</div>
                             @if($book->returned_at)
                                 <div class="returned-date">Returned On: {{ $book->returned_at->format('Y-m-d') }}</div>
+                            @endif
+                            @if($book->late_fee > 0 && !$book->returned_at)
+                                <div class="late-fee">Late Fee: ${{ number_format($book->late_fee, 2) }}</div>
                             @endif
                         </div>
                         <div class="status {{ $book->returned_at ? 'returned' : ($book->due_date < now() && !$book->returned_at ? 'due' : 'borrowed') }}">
@@ -282,7 +306,7 @@
                     <p style="text-align: center; color: #121246;">You have not borrowed any books yet.</p>
                 @endif
             </div>
-            <!-- Existing Due Books Section -->
+            <!-- Books that are Due -->
             <div class="books-due-section">
                 <div class="books-that-are-due">Books that are Due</div>
                 @foreach($dueBooks as $book)
@@ -290,6 +314,7 @@
                         <div class="book-info">
                             <div class="book-name">Book name: {{ $book->book->title }}</div>
                             <div class="due-date">Due Date: {{ $book->due_date->format('Y-m-d') }}</div>
+                            <div class="late-fee">Late Fee: ${{ number_format($book->late_fee, 2) }}</div>
                         </div>
                         <div class="status due">Due</div>
                     </div>
@@ -298,7 +323,16 @@
                     <p style="text-align: center; color: #121246;">No books are currently due.</p>
                 @endif
             </div>
-            <!-- Existing Returned Books Section -->
+            <div class="due-amount-here">
+                Due Amount: ${{ number_format($dueAmount, 2) }}
+                @if($dueAmount > 0)
+                    <form action="{{ route('pay') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="pay-button">Pay Now</button>
+                    </form>
+                @endif
+            </div>
+            <!-- Recently Returned -->
             <div class="books-due-section">
                 <div class="books-that-are-due">Recently Returned</div>
                 @foreach($returnedBooks as $book)
@@ -316,6 +350,22 @@
             </div>
         </div>
     </div>
+        <!-- Add this section after the "Recently Returned" section -->
+        <div class="payment-history-section">
+            <div class="books-that-are-due">Payment History</div>
+            @foreach($paymentHistory as $payment)
+                <div class="book-entry">
+                    <div class="book-info">
+                        <div>Amount: ${{ number_format($payment->amount, 2) }}</div>
+                        <div>Date: {{ $payment->created_at->format('Y-m-d H:i') }}</div>
+                        <div>Description: {{ $payment->description ?? 'N/A' }}</div>
+                    </div>
+                </div>
+            @endforeach
+            @if($paymentHistory->isEmpty())
+                <p style="text-align: center; color: #121246;">No payment history available.</p>
+            @endif
+        </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const menuButton = document.querySelector('.menu-button');

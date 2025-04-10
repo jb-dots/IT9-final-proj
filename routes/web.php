@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
 
     // Transaction route
     Route::get('/transaction', [TransactionController::class, 'index'])->name('transaction');
+    
 
     // Favorites route
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites');
@@ -67,6 +68,13 @@ Route::middleware('auth')->group(function () {
         Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
         Route::patch('/books/{book}/toggle', [BookController::class, 'toggleStatus'])->name('books.toggle');
     });
+
+    // routes/web.php
+    Route::post('/admin/update-borrowed-status/{borrowedBook}', [App\Http\Controllers\AdminController::class, 'updateBorrowStatus'])
+    ->middleware(['auth', 'admin'])
+    ->name('admin.updateBorrowStatus');
+    Route::post('/admin/mark-as-paid/{borrowedBook}', [App\Http\Controllers\AdminController::class, 'markAsPaid'])->middleware(['auth', 'admin'])->name('admin.markAsPaid');
+    
 });
 
 require __DIR__.'/auth.php';

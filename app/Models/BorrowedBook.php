@@ -1,14 +1,22 @@
 <?php
-
+// app/Models/BorrowedBook.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class BorrowedBook extends Model
 {
-    protected $fillable = ['book_id', 'user_id', 'status', 'borrowed_at', 'due_date', 'returned_at'];
+    protected $fillable = [
+        'user_id',
+        'book_id',
+        'borrowed_at',
+        'due_date',
+        'returned_at',
+        'status',
+        'late_fee',
+    ];
 
-    // Cast timestamps to Carbon instances
     protected $casts = [
         'borrowed_at' => 'datetime',
         'due_date' => 'datetime',
@@ -23,5 +31,22 @@ class BorrowedBook extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Calculate the late fee for this borrowed book.
+     *
+     * @return float
+     */
+    public function calculateLateFee()
+    {
+        $lateFeePerDay = 0.50; // $0.50 per day late
+
+        if (!$this->returned_at && $this->due_date < now()) {
+            $daysLate = now()->diffInDays($this->due_date);
+            return $daysLate * $lateFeePerDay;
+        }
+
+        return 0.00;
     }
 }
