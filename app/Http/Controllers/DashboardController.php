@@ -29,31 +29,31 @@ class DashboardController extends Controller
         // Fetch top books (most borrowed)
         $topBooks = Book::select('books.*')
             ->leftJoinSub(
-                BorrowedBook::select('book_id')
-                    ->groupBy('book_id')
-                    ->selectRaw('book_id, COUNT(*) as borrow_count'),
+                BorrowedBook::selectRaw('book_id, COUNT(*) as borrow_count')
+                    ->groupBy('book_id'),
                 'borrow_counts',
                 'books.id',
                 '=',
                 'borrow_counts.book_id'
             )
-            ->orderByRaw('borrow_counts.borrow_count DESC NULLS LAST')
+            ->orderByRaw('CASE WHEN borrow_counts.borrow_count IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('borrow_counts.borrow_count', 'desc')
             ->take(5)
             ->get();
 
         // Fetch most read books (most returned)
         $mostReadBooks = Book::select('books.*')
             ->leftJoinSub(
-                BorrowedBook::select('book_id')
+                BorrowedBook::selectRaw('book_id, COUNT(*) as return_count')
                     ->where('status', 'returned')
-                    ->groupBy('book_id')
-                    ->selectRaw('book_id, COUNT(*) as return_count'),
+                    ->groupBy('book_id'),
                 'return_counts',
                 'books.id',
                 '=',
                 'return_counts.book_id'
             )
-            ->orderByRaw('return_counts.return_count DESC NULLS LAST')
+            ->orderByRaw('CASE WHEN return_counts.return_count IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('return_counts.return_count', 'desc')
             ->take(5)
             ->get();
 

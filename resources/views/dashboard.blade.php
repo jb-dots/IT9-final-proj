@@ -290,36 +290,6 @@
                 @endforelse
             </div>
 
-            <div class="borrowed-books">Your Borrowed Books</div>
-            <table class="borrowed-table">
-                <thead>
-                    <tr>
-                        <th>Book Title</th>
-                        <th>Borrowed At</th>
-                        <th>Due Date</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($borrowedBooks as $borrowedBook)
-                        <tr>
-                            <td>{{ $borrowedBook->book->title }}</td>
-                            <td>{{ $borrowedBook->borrowed_at->format('Y-m-d H:i') }}</td>
-                            <td>
-                                <span class="{{ $borrowedBook->status === 'borrowed' && $borrowedBook->due_date && $borrowedBook->due_date->isPast() ? 'overdue' : '' }}">
-                                    {{ $borrowedBook->due_date ? $borrowedBook->due_date->format('Y-m-d H:i') : 'N/A' }}
-                                </span>
-                            </td>
-                            <td>{{ ucfirst($borrowedBook->status) }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: #121246;">You have not borrowed any books.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-
             <div class="trending2">Top Books</div>
             <div class="book-container">
                 @forelse($topBooks as $book)

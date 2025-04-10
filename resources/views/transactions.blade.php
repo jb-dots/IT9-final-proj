@@ -261,12 +261,34 @@
                     Due Amount: ${{ number_format($dueAmount, 2) }}
                 </div>
             </div>
+            <!-- New Section: All Borrowed Books -->
             <div class="books-due-section">
-                <div class="books-that-are-due">Books that are due</div>
+                <div class="books-that-are-due">All Borrowed Books</div>
+                @foreach($borrowedBooks as $book)
+                    <div class="book-entry">
+                        <div class="book-info">
+                            <div class="book-name">Book name: {{ $book->book->title }}</div>
+                            <div class="due-date">Due Date: {{ $book->due_date->format('Y-m-d') }}</div>
+                            @if($book->returned_at)
+                                <div class="returned-date">Returned On: {{ $book->returned_at->format('Y-m-d') }}</div>
+                            @endif
+                        </div>
+                        <div class="status {{ $book->returned_at ? 'returned' : ($book->due_date < now() && !$book->returned_at ? 'due' : 'borrowed') }}">
+                            {{ $book->returned_at ? 'Returned' : ($book->due_date < now() && !$book->returned_at ? 'Due' : 'Borrowed') }}
+                        </div>
+                    </div>
+                @endforeach
+                @if($borrowedBooks->isEmpty())
+                    <p style="text-align: center; color: #121246;">You have not borrowed any books yet.</p>
+                @endif
+            </div>
+            <!-- Existing Due Books Section -->
+            <div class="books-due-section">
+                <div class="books-that-are-due">Books that are Due</div>
                 @foreach($dueBooks as $book)
                     <div class="book-entry">
                         <div class="book-info">
-                            <div class="book-name">Book name: {{ $book->title }}</div>
+                            <div class="book-name">Book name: {{ $book->book->title }}</div>
                             <div class="due-date">Due Date: {{ $book->due_date->format('Y-m-d') }}</div>
                         </div>
                         <div class="status due">Due</div>
@@ -276,12 +298,13 @@
                     <p style="text-align: center; color: #121246;">No books are currently due.</p>
                 @endif
             </div>
+            <!-- Existing Returned Books Section -->
             <div class="books-due-section">
                 <div class="books-that-are-due">Recently Returned</div>
                 @foreach($returnedBooks as $book)
                     <div class="book-entry">
                         <div class="book-info">
-                            <div class="book-name">Book name: {{ $book->title }}</div>
+                            <div class="book-name">Book name: {{ $book->book->title }}</div>
                             <div class="due-date">Returned On: {{ $book->returned_at->format('Y-m-d') }}</div>
                         </div>
                         <div class="status returned">Returned</div>

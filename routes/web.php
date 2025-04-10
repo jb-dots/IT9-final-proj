@@ -49,14 +49,14 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Admin routes
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin.index');
-        Route::get('/books/create', [AdminController::class, 'create'])->name('admin.books.create');
-        Route::post('/books', [AdminController::class, 'store'])->name('admin.books.store');
-        Route::get('/books/{book}/edit', [AdminController::class, 'edit'])->name('admin.books.edit');
-        Route::put('/books/{book}', [AdminController::class, 'update'])->name('admin.books.update');
-        Route::put('/borrowed-books/{borrowedBook}', [AdminController::class, 'updateBorrowStatus'])->name('admin.borrowed.update');
-    })->middleware(AdminMiddleware::class);
+        Route::get('/create', [AdminController::class, 'create'])->name('admin.create');
+        Route::post('/store', [AdminController::class, 'store'])->name('admin.store');
+        Route::get('/edit/{book}', [AdminController::class, 'edit'])->name('admin.edit');
+        Route::put('/update/{book}', [AdminController::class, 'update'])->name('admin.update');
+        Route::put('/borrow-status/{borrowedBook}', [AdminController::class, 'updateBorrowStatus'])->name('admin.borrowed.update');
+    });
 
     // Additional admin routes (if needed)
     Route::group(['middleware' => ['auth', 'admin'], 'prefix' => 'admin', 'as' => 'admin.'], function () {

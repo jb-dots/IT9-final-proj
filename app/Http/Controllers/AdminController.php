@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('admin'); // Apply the admin middleware to all methods
+    }
+
     public function index()
     {
         $books = Book::with('genre')->get();
