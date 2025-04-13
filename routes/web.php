@@ -74,7 +74,9 @@ Route::middleware('auth')->group(function () {
     ->middleware(['auth', 'admin'])
     ->name('admin.updateBorrowStatus');
     Route::post('/admin/mark-as-paid/{borrowedBook}', [App\Http\Controllers\AdminController::class, 'markAsPaid'])->middleware(['auth', 'admin'])->name('admin.markAsPaid');
-    
+    Route::get('/admin/adjust-stock/{book}', [App\Http\Controllers\AdminController::class, 'adjustStock'])->middleware(['auth', 'admin'])->name('admin.adjustStock');
+    Route::post('/admin/update-stock/{book}', [App\Http\Controllers\AdminController::class, 'updateStock'])->middleware(['auth', 'admin'])->name('admin.updateStock');
+    Route::post('/dashboard/borrow/{book}', [App\Http\Controllers\DashboardController::class, 'borrow'])->middleware('auth')->name('dashboard.borrow');
 });
 
 require __DIR__.'/auth.php';

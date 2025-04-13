@@ -111,7 +111,7 @@
     <div class="form-container">
         <a href="{{ route('admin.index') }}" class="back-btn">Back to Dashboard</a>
         <h2>Edit Book</h2>
-        <form action="{{ route('admin.books.update', $book) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.update', $book) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="form-group">

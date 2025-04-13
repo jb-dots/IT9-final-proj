@@ -98,6 +98,7 @@
                     <th>Title</th>
                     <th>Author</th>
                     <th>Genre</th>
+                    <th>Quantity</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -107,8 +108,10 @@
                         <td>{{ $book->title }}</td>
                         <td>{{ $book->author }}</td>
                         <td>{{ $book->genre->name ?? 'N/A' }}</td>
+                        <td>{{ $book->quantity }}</td>
                         <td>
                             <a href="{{ route('admin.edit', $book) }}"><button class="action-button">Edit</button></a>
+                            <a href="{{ route('admin.adjustStock', $book) }}"><button class="action-button">Adjust Stock</button></a>
                         </td>
                     </tr>
                 @endforeach

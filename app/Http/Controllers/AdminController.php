@@ -117,12 +117,20 @@ class AdminController extends Controller
         }
     }
 
+// app/Http/Controllers/AdminController.php
     public function updateBorrowStatus(Request $request, BorrowedBook $borrowedBook)
     {
         try {
             $request->validate([
                 'status' => 'required|in:borrowed,returned',
             ]);
+
+            if ($request->status === 'returned' && $borrowedBook->status === 'borrowed') {
+                // Increase the book's quantity when returned
+                $book = $borrowedBook->book;
+                $book->quantity += 1;
+                $book->save();
+            }
 
             $borrowedBook->update([
                 'status' => $request->status,
@@ -157,6 +165,39 @@ class AdminController extends Controller
             return redirect()->route('admin.index')->with('success', 'Late fee marked as paid.');
         } catch (\Exception $e) {
             return redirect()->route('admin.index')->with('error', 'Failed to mark late fee as paid: ' . $e->getMessage());
+        }
+    }
+    public function adjustStock(Book $book)
+    {
+        return view('admin.adjust-stock', compact('book'));
+    }
+
+    public function updateStock(Request $request, Book $book)
+    {
+        try {
+            $request->validate([
+                'quantity_change' => 'required|integer',
+                'action' => 'required|in:stock_in,stock_out',
+            ]);
+
+            $quantityChange = $request->quantity_change;
+            $action = $request->action;
+
+            if ($action === 'stock_in') {
+                $book->quantity += $quantityChange;
+            } elseif ($action === 'stock_out') {
+                $newQuantity = $book->quantity - $quantityChange;
+                if ($newQuantity < 0) {
+                    return redirect()->back()->with('error', 'Cannot stock out more books than available.');
+                }
+                $book->quantity = $newQuantity;
+            }
+
+            $book->save();
+
+            return redirect()->route('admin.index')->with('success', 'Book stock updated successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update stock: ' . $e->getMessage());
         }
     }
 }

@@ -17,7 +17,7 @@
 
         body, html {
             height: 100%;
-            font-family: Arial, sans-serif;
+            font-family: "Inter-Regular", sans-serif;
             background: #121246;
             color: #fff;
             overflow-x: hidden;
@@ -81,14 +81,14 @@
             background: #ded9c3;
             width: 100%;
             height: 80px;
-            position: fixed; /* Kept as fixed per original design */
+            position: fixed;
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
             z-index: 1;
-            display: flex; /* Added to center the home-title text */
-            justify-content: center; /* Horizontally center */
-            align-items: center; /* Vertically center */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .home-title {
@@ -98,6 +98,34 @@
             font-size: 28px;
             font-weight: 600;
             z-index: 2;
+        }
+
+        /* Messages */
+        .message {
+            text-align: center;
+            padding: 10px;
+            margin: 100px auto 20px;
+            max-width: 1100px;
+            border-radius: 4px;
+        }
+        .message.success {
+            background: #6aa933;
+            color: #fff;
+        }
+        .message.error {
+            background: #ff3333;
+            color: #fff;
+        }
+
+        /* Overdue notice */
+        .overdue-notice {
+            background: #ff6b6b;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            margin: 100px auto 20px;
+            max-width: 1100px;
         }
 
         /* Section headers */
@@ -124,12 +152,13 @@
 
         .book-card {
             width: 100%;
-            height: 250px;
+            height: 300px; /* Increased to accommodate quantity and button */
             background: #b5835a;
             border-radius: 15px;
             border: 1px solid #b5835a;
             overflow: hidden;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
         }
 
         .book-card:hover {
@@ -144,15 +173,46 @@
             border-radius: 10px 10px 0 0;
         }
 
+        .book-card .book-info {
+            padding: 10px;
+            text-align: center;
+        }
+
         .book-card p {
             color: #d4a373;
-            text-align: center;
             font-family: "Inter-Regular", sans-serif;
             font-size: 14px;
-            padding: 10px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+
+        .book-card .quantity {
+            color: #fff;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .book-card .action-button {
+            background: #121246;
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .book-card .action-button:hover {
+            background: #1e2a78;
+        }
+
+        .book-card .out-of-stock {
+            color: #ff6b6b;
+            font-size: 12px;
+            font-style: italic;
         }
 
         /* Borrowed books table styles */
@@ -188,16 +248,6 @@
             font-weight: bold;
         }
 
-        .overdue-notice {
-            background: #ff6b6b;
-            color: #fff;
-            padding: 10px;
-            border-radius: 4px;
-            text-align: center;
-            margin: 20px auto;
-            max-width: 1100px;
-        }
-
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .home-page {
@@ -221,7 +271,7 @@
             }
 
             .book-card {
-                height: 200px;
+                height: 250px;
             }
 
             .book-card img {
@@ -230,6 +280,10 @@
 
             .book-card p {
                 font-size: 12px;
+            }
+
+            .book-card .quantity, .book-card .action-button, .book-card .out-of-stock {
+                font-size: 10px;
             }
 
             .borrowed-table th, .borrowed-table td {
@@ -272,46 +326,129 @@
                 <div class="home-title">DASHBOARD</div>
             </div>
 
+            @if(session('success'))
+                <div class="message success">{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="message error">{{ session('error') }}</div>
+            @endif
+
             @if($overdueCount > 0)
                 <div class="overdue-notice">
                     You have {{ $overdueCount }} overdue book(s)! Please return them as soon as possible.
                 </div>
             @endif
 
+            <!-- Trending Books -->
             <div class="trending">Trending</div>
             <div class="book-container">
                 @forelse($books as $book)
                     <div class="book-card">
                         <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
-                        <p>{{ $book->title }}</p>
+                        <div class="book-info">
+                            <p>{{ $book->title }}</p>
+                            <div class="quantity">Available: {{ $book->quantity }}</div>
+                            @if($book->quantity > 0)
+                                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="action-button">Borrow</button>
+                                </form>
+                            @else
+                                <span class="out-of-stock">Out of Stock</span>
+                            @endif
+                        </div>
                     </div>
                 @empty
                     <p style="color: #121246; padding: 20px;">No trending books available.</p>
                 @endforelse
             </div>
 
+            <!-- Top Books -->
             <div class="trending2">Top Books</div>
             <div class="book-container">
                 @forelse($topBooks as $book)
                     <div class="book-card">
                         <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
-                        <p>{{ $book->title }}</p>
+                        <div class="book-info">
+                            <p>{{ $book->title }}</p>
+                            <div class="quantity">Available: {{ $book->quantity }}</div>
+                            @if($book->quantity > 0)
+                                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="action-button">Borrow</button>
+                                </form>
+                            @else
+                                <span class="out-of-stock">Out of Stock</span>
+                            @endif
+                        </div>
                     </div>
                 @empty
                     <p style="color: #121246; padding: 20px;">No top books available.</p>
                 @endforelse
             </div>
 
+            <!-- Most Read Books -->
             <div class="trending3">Most Read</div>
             <div class="book-container">
                 @forelse($mostReadBooks as $book)
                     <div class="book-card">
                         <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
-                        <p>{{ $book->title }}</p>
+                        <div class="book-info">
+                            <p>{{ $book->title }}</p>
+                            <div class="quantity">Available: {{ $book->quantity }}</div>
+                            @if($book->quantity > 0)
+                                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="action-button">Borrow</button>
+                                </form>
+                            @else
+                                <span class="out-of-stock">Out of Stock</span>
+                            @endif
+                        </div>
                     </div>
                 @empty
                     <p style="color: #121246; padding: 20px;">No most read books available.</p>
                 @endforelse
+            </div>
+
+            <!-- Borrowed Books -->
+            <div class="borrowed-books">Your Borrowed Books</div>
+            <div class="borrowed-table">
+                @if($borrowedBooks->isEmpty())
+                    <p style="color: #121246; text-align: center; padding: 20px;">You have not borrowed any books yet.</p>
+                @else
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Book Title</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Late Fee</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($borrowedBooks as $borrowedBook)
+                                <tr>
+                                    <td>{{ $borrowedBook->book->title }}</td>
+                                    <td>
+                                        {{ $borrowedBook->due_date->format('Y-m-d') }}
+                                        @if($borrowedBook->due_date->isPast() && !$borrowedBook->returned_at)
+                                            <span class="overdue">(Overdue)</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ ucfirst($borrowedBook->status) }}</td>
+                                    <td>
+                                        @if($borrowedBook->late_fee > 0)
+                                            ${{ number_format($borrowedBook->late_fee, 2) }}
+                                        @else
+                                            $0.00
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
             </div>
         </div>
     </div>
