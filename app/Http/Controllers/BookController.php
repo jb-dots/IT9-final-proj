@@ -21,17 +21,28 @@ class BookController extends Controller
         return view('dashboard', compact('books'));
     }
 
+    // Updated show method to display a single book's description
     public function show($id)
     {
+        $book = Book::findOrFail($id);
+        return view('books.description', compact('book')); // Points to description.blade.php
+    }
+
+    // New method to handle genre display (replacing old show logic)
+    public function showGenre($id)
+    {
         $genre = Genre::findOrFail($id);
-        $books = $genre->books;
+        $books = $genre->books()->when(request('search'), function ($query, $search) {
+            return $query->where('title', 'like', "%{$search}%")
+                        ->orWhere('author', 'like', "%{$search}%");
+        })->get();
         return view('genre.show', compact('genre', 'books'));
     }
 
     public function create()
     {
         $genres = Genre::all();
-        return view('admin.books.create', compact('genres')); // Updated view path for clarity
+        return view('admin.books.create', compact('genres'));
     }
 
     public function store(Request $request)
@@ -40,7 +51,7 @@ class BookController extends Controller
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
             'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'genre_id' => 'required|exists:genres,id', // Added genre validation
+            'genre_id' => 'required|exists:genres,id',
         ]);
 
         $book = new Book();
@@ -68,7 +79,7 @@ class BookController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Nullable for updates
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'genre_id' => 'required|exists:genres,id',
             'is_borrowed' => 'boolean',
         ]);
@@ -100,7 +111,6 @@ class BookController extends Controller
         return view('favorites', compact('favorites'));
     }
 
-    // Admin-specific index for the books table
     public function adminIndex()
     {
         $books = Book::with('genre')->get();
@@ -126,7 +136,7 @@ class BookController extends Controller
             'user_id' => Auth::id(),
             'status' => 'borrowed',
             'borrowed_at' => now(),
-            'due_date' => now()->addDays(14), // Set due date to 14 days from now
+            'due_date' => now()->addDays(14),
         ]);
 
         return redirect()->back()->with('success', 'Book borrowed successfully. Due date: ' . now()->addDays(14)->format('Y-m-d'));

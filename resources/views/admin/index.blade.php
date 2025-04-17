@@ -1,4 +1,3 @@
-<!-- resources/views/admin/index.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -89,6 +88,34 @@
     @endif
 
     <a href="{{ route('admin.create') }}"><button class="button">Add New Book</button></a>
+    <a href="{{ route('admin.genres.create') }}"><button class="button">Add New Genre</button></a>
+
+    <div class="section">
+        <h2>Genres</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($genres as $genre)
+                    <tr>
+                        <td>{{ $genre->name }}</td>
+                        <td>
+                            <a href="{{ route('admin.genres.edit', $genre) }}"><button class="action-button">Edit</button></a>
+                            <form action="{{ route('admin.genres.destroy', $genre) }}" method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="action-button" onclick="return confirm('Are you sure you want to delete this genre?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
     <div class="section">
         <h2>Books</h2>

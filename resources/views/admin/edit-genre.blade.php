@@ -14,7 +14,7 @@ class AdminController extends Controller
 {
     public function __construct()
     {
-        // Removed 'admin' middleware; handled by route middleware 'role:admin'
+        $this->middleware('admin'); // Apply the admin middleware to all methods
     }
 
     public function index()

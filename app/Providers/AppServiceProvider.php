@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Routing\Router;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,8 +18,9 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(Router $router): void
     {
-        $this->app['router']->aliasMiddleware('admin', \App\Http\Middleware\AdminMiddleware::class);
+        // Register the 'role' middleware alias globally
+        $router->aliasMiddleware('role', \App\Http\Middleware\Role::class);
     }
 }

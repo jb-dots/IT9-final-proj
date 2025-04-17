@@ -123,7 +123,7 @@
             <a href="{{ route('catalogs') }}" class="nav-link {{ request()->routeIs('catalogs') ? 'active' : '' }}">Catalogs</a>
         </div>
         <div class="nav-item">
-            <a href="{{ route('transaction') }}" class="nav-link {{ request()->routeIs('transaction') ? 'active' : '' }}">Transaction</a>
+            <a href="{{ route('transaction') }}" class="nav-link {{ request()->routeIs('transaction') ? 'active' : '' }}">Borrowed Books</a>
         </div>
         <div class="nav-item">
             <a href="{{ route('favorites') }}" class="nav-link {{ request()->routeIs('favorites') ? 'active' : '' }}">Favorites</a>
