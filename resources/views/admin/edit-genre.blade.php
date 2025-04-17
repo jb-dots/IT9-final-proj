@@ -1,266 +1,113 @@
-<?php
-// app/Http/Controllers/AdminController.php
-namespace App\Http\Controllers;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Genre - Grand Archives</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+    @vite(['resources/css/app.css'])
 
-use App\Models\Book;
-use App\Models\Genre;
-use App\Models\BorrowedBook;
-use App\Models\Transaction;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
-
-class AdminController extends Controller
-{
-    public function __construct()
-    {
-        $this->middleware('admin'); // Apply the admin middleware to all methods
-    }
-
-    public function index()
-    {
-        $lateFeePerDay = 0.50; // $0.50 per day late
-
-        // Fetch all books
-        $books = Book::with('genre')->get();
-
-        // Fetch all genres
-        $genres = Genre::orderBy('name')->get();
-
-        // Fetch borrowed books with user information
-        $borrowedBooks = BorrowedBook::with(['book', 'user'])
-            ->orderBy('borrowed_at', 'desc')
-            ->get();
-
-        // Calculate and update late fees for overdue books
-        foreach ($borrowedBooks as $borrowedBook) {
-            if (!$borrowedBook->returned_at && $borrowedBook->due_date < now()) {
-                $daysLate = now()->diffInDays($borrowedBook->due_date);
-                $lateFee = $daysLate * $lateFeePerDay;
-                $borrowedBook->update(['late_fee' => $lateFee]);
-            } elseif (!$borrowedBook->returned_at && $borrowedBook->due_date >= now()) {
-                $borrowedBook->update(['late_fee' => 0]);
-            }
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        // Refresh the borrowed books collection
-        $borrowedBooks = BorrowedBook::with(['book', 'user'])
-            ->orderBy('borrowed_at', 'desc')
-            ->get();
-
-        return view('admin.index', compact('books', 'borrowedBooks', 'genres'));
-    }
-
-    public function create()
-    {
-        $genres = Genre::orderBy('name')->get();
-        return view('admin.create', compact('genres'));
-    }
-
-    public function store(Request $request)
-    {
-        try {
-            $request->validate([
-                'title' => 'required|string|max:255',
-                'author' => 'nullable|string|max:255',
-                'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'genre_id' => 'required|exists:genres,id',
-            ]);
-
-            $coverImagePath = $request->file('cover_image')->store('images', 'public');
-
-            Book::create([
-                'title' => $request->title,
-                'author' => $request->author,
-                'cover_image' => $coverImagePath,
-                'genre_id' => $request->genre_id,
-            ]);
-
-            return redirect()->route('admin.index')->with('success', 'Book added successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to add book: ' . $e->getMessage());
+        body, html {
+            height: 100%;
+            font-family: "Inter-Regular", sans-serif;
+            background: #121246;
+            color: #fff;
         }
-    }
 
-    public function edit(Book $book)
-    {
-        $genres = Genre::orderBy('name')->get();
-        return view('admin.edit', compact('book', 'genres'));
-    }
-
-    public function update(Request $request, Book $book)
-    {
-        try {
-            $request->validate([
-                'title' => 'required|string|max:255',
-                'author' => 'nullable|string|max:255',
-                'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'genre_id' => 'required|exists:genres,id',
-            ]);
-
-            $data = [
-                'title' => $request->title,
-                'author' => $request->author,
-                'genre_id' => $request->genre_id,
-            ];
-
-            if ($request->hasFile('cover_image')) {
-                // Delete the old image
-                if ($book->cover_image) {
-                    Storage::disk('public')->delete($book->cover_image);
-                }
-                $data['cover_image'] = $request->file('cover_image')->store('images', 'public');
-            }
-
-            $book->update($data);
-
-            return redirect()->route('admin.index')->with('success', 'Book updated successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update book: ' . $e->getMessage());
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1a1a4d;
+            border-radius: 8px;
         }
-    }
 
-    public function updateBorrowStatus(Request $request, BorrowedBook $borrowedBook)
-    {
-        try {
-            $request->validate([
-                'status' => 'required|in:borrowed,returned',
-            ]);
-
-            if ($request->status === 'returned' && $borrowedBook->status === 'borrowed') {
-                // Increase the book's quantity when returned
-                $book = $borrowedBook->book;
-                $book->quantity += 1;
-                $book->save();
-            }
-
-            $borrowedBook->update([
-                'status' => $request->status,
-                'returned_at' => $request->status === 'returned' ? now() : null,
-            ]);
-
-            return redirect()->route('admin.index')->with('success', 'Borrow status updated successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update borrow status: ' . $e->getMessage());
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #d4a373;
         }
-    }
 
-    public function markAsPaid(Request $request, BorrowedBook $borrowedBook)
-    {
-        try {
-            // Ensure the book has a late fee
-            if ($borrowedBook->late_fee <= 0) {
-                return redirect()->route('admin.index')->with('error', 'No late fee to pay for this book.');
-            }
-
-            // Record the payment in the transactions table
-            Transaction::create([
-                'user_id' => $borrowedBook->user_id,
-                'amount' => $borrowedBook->late_fee,
-                'type' => 'payment',
-                'description' => 'Payment for late fee on book: ' . $borrowedBook->book->title,
-            ]);
-
-            // Clear the late fee
-            $borrowedBook->update(['late_fee' => 0]);
-
-            return redirect()->route('admin.index')->with('success', 'Late fee marked as paid.');
-        } catch (\Exception $e) {
-            return redirect()->route('admin.index')->with('error', 'Failed to mark late fee as paid: ' . $e->getMessage());
+        .form-group {
+            margin-bottom: 15px;
         }
-    }
 
-    public function adjustStock(Book $book)
-    {
-        return view('admin.adjust-stock', compact('book'));
-    }
-
-    public function updateStock(Request $request, Book $book)
-    {
-        try {
-            $request->validate([
-                'quantity_change' => 'required|integer',
-                'action' => 'required|in:stock_in,stock_out',
-            ]);
-
-            $quantityChange = $request->quantity_change;
-            $action = $request->action;
-
-            if ($action === 'stock_in') {
-                $book->quantity += $quantityChange;
-            } elseif ($action === 'stock_out') {
-                $newQuantity = $book->quantity - $quantityChange;
-                if ($newQuantity < 0) {
-                    return redirect()->back()->with('error', 'Cannot stock out more books than available.');
-                }
-                $book->quantity = $newQuantity;
-            }
-
-            $book->save();
-
-            return redirect()->route('admin.index')->with('success', 'Book stock updated successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update stock: ' . $e->getMessage());
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #d4a373;
         }
-    }
 
-    // Genre Management Methods
-    public function createGenre()
-    {
-        return view('admin.add-genre');
-    }
-
-    public function storeGenre(Request $request)
-    {
-        try {
-            $request->validate([
-                'name' => 'required|string|max:255|unique:genres',
-            ]);
-
-            Genre::create([
-                'name' => $request->name,
-            ]);
-
-            return redirect()->route('admin.index')->with('success', 'Genre added successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to add genre: ' . $e->getMessage());
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+            background: #d9d9d9;
+            color: #121246;
         }
-    }
 
-    public function editGenre(Genre $genre)
-    {
-        return view('admin.edit-genre', compact('genre'));
-    }
-
-    public function updateGenre(Request $request, Genre $genre)
-    {
-        try {
-            $request->validate([
-                'name' => 'required|string|max:255|unique:genres,name,' . $genre->id,
-            ]);
-
-            $genre->update([
-                'name' => $request->name,
-            ]);
-
-            return redirect()->route('admin.index')->with('success', 'Genre updated successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update genre: ' . $e->getMessage());
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #d4a373;
+            color: #121246;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
         }
-    }
 
-    public function destroyGenre(Genre $genre)
-    {
-        try {
-            // Check if the genre is associated with any books
-            if ($genre->books()->count() > 0) {
-                return redirect()->route('admin.index')->with('error', 'Cannot delete genre because it is associated with books.');
-            }
-
-            $genre->delete();
-            return redirect()->route('admin.index')->with('success', 'Genre deleted successfully.');
-        } catch (\Exception $e) {
-            return redirect()->route('admin.index')->with('error', 'Failed to delete genre: ' . $e->getMessage());
+        .submit-btn:hover {
+            background: #b5835a;
         }
-    }
-}
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background: #d4a373;
+            color: #121246;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: #b5835a;
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <a href="{{ route('admin.index') }}" class="back-btn">Back to Dashboard</a>
+        <h2>Edit Genre</h2>
+        <form action="{{ route('admin.genres.update', $genre) }}" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="form-group">
+                <label for="name">Genre Name</label>
+                <input type="text" name="name" id="name" value="{{ old('name', $genre->name) }}">
+                @error('name')
+                    <div class="error">{{ $message }}</div>
+                @enderror
+            </div>
+            <button type="submit" class="submit-btn">Update Genre</button>
+        </form>
+    </div>
+</body>
+</html>

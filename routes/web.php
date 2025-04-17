@@ -47,7 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Admin routes (combined both groups and standardized on 'role:admin')
+    // Admin routes
     Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
         // Main Admin Routes
         Route::get('/', [AdminController::class, 'index'])->name('admin.index');
@@ -60,14 +60,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/update-borrow-status/{borrowedBook}', [AdminController::class, 'updateBorrowStatus'])->name('admin.updateBorrowStatus');
         Route::post('/mark-as-paid/{borrowedBook}', [AdminController::class, 'markAsPaid'])->name('admin.markAsPaid');
     
-        // Genre Routes
-        Route::get('/genres/create', [AdminController::class, 'createGenre'])->name('admin.genres.create');
-        Route::post('/genres', [AdminController::class, 'storeGenre'])->name('admin.genres.store');
-        Route::get('/genres/{genre}/edit', [AdminController::class, 'editGenre'])->name('admin.genres.edit');
-        Route::put('/genres/{genre}', [AdminController::class, 'updateGenre'])->name('admin.genres.update');
-        Route::delete('/genres/{genre}', [AdminController::class, 'destroyGenre'])->name('admin.genres.destroy');
+        // Genre Routes (Updated to use GenreController)
+        Route::get('/genres/create', [GenreController::class, 'create'])->name('admin.genres.create');
+        Route::post('/genres', [GenreController::class, 'store'])->name('admin.genres.store');
+        Route::get('/genres/{genre}/edit', [GenreController::class, 'edit'])->name('admin.genres.edit');
+        Route::put('/genres/{genre}', [GenreController::class, 'update'])->name('admin.genres.update');
+        Route::delete('/genres/{genre}', [GenreController::class, 'destroy'])->name('admin.genres.destroy');
 
-        // Additional Admin Book Routes (previously using 'admin' middleware)
+        // Additional Admin Book Routes
         Route::get('/books', [BookController::class, 'adminIndex'])->name('admin.books.index');
         Route::get('/books/create', [BookController::class, 'create'])->name('admin.books.create');
         Route::post('/books', [BookController::class, 'store'])->name('admin.books.store');

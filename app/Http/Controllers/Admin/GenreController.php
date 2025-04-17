@@ -46,7 +46,16 @@ class GenreController extends Controller
 
     public function destroy(Genre $genre)
     {
-        $genre->delete();
-        return redirect()->route('admin.index')->with('success', 'Genre deleted successfully.');
+        try {
+            // Check if the genre is associated with any books
+            if ($genre->books()->count() > 0) {
+                return redirect()->route('admin.index')->with('error', 'Cannot delete genre because it is associated with books.');
+            }
+
+            $genre->delete();
+            return redirect()->route('admin.index')->with('success', 'Genre deleted successfully.');
+        } catch (\Exception $e) {
+            return redirect()->route('admin.index')->with('error', 'Failed to delete genre: ' . $e->getMessage());
+        }
     }
 }
