@@ -124,6 +124,7 @@
                 <tr>
                     <th>Title</th>
                     <th>Author</th>
+                    <th>Publisher</th>
                     <th>Genre</th>
                     <th>Quantity</th>
                     <th>Actions</th>
@@ -133,7 +134,8 @@
                 @foreach($books as $book)
                     <tr>
                         <td>{{ $book->title }}</td>
-                        <td>{{ $book->author }}</td>
+                        <td>{{ $book->author ?? 'N/A' }}</td>
+                        <td>{{ $book->publisher ?? 'N/A' }}</td>
                         <td>{{ $book->genre->name ?? 'N/A' }}</td>
                         <td>{{ $book->quantity }}</td>
                         <td>
@@ -165,8 +167,11 @@
             </thead>
             <tbody>
                 @foreach($borrowedBooks as $borrowedBook)
+                    @php
+                        $book = $borrowedBook->book;
+                    @endphp
                     <tr>
-                        <td>{{ $borrowedBook->book->title }}</td>
+                        <td>{{ $book->title }}</td>
                         <td>{{ $borrowedBook->user->name }}</td>
                         <td>{{ $borrowedBook->user->contact_no ?? 'N/A' }}</td>
                         <td>{{ $borrowedBook->user->address ?? 'N/A' }}</td>

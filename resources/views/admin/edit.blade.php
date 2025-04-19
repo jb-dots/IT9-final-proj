@@ -129,11 +129,18 @@
                 @enderror
             </div>
             <div class="form-group">
+                <label for="publisher">Publisher</label>
+                <input type="text" name="publisher" id="publisher" value="{{ old('publisher', $book->publisher) }}">
+                @error('publisher')
+                    <div class="error">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="form-group">
                 <label for="cover_image">Cover Image</label>
                 <input type="file" name="cover_image" id="cover_image">
                 <div class="current-image">
                     <p>Current Image:</p>
-                    <img src="{{ asset($book->cover_image) }}" alt="{{ $book->title }}">
+                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}"> <!-- Updated path -->
                 </div>
                 @error('cover_image')
                     <div class="error">{{ $message }}</div>
@@ -142,6 +149,7 @@
             <div class="form-group">
                 <label for="genre_id">Genre</label>
                 <select name="genre_id" id="genre_id">
+                    <option value="">Select a Genre</option> <!-- Added placeholder option -->
                     @foreach ($genres as $genre)
                         <option value="{{ $genre->id }}" {{ old('genre_id', $book->genre_id) == $genre->id ? 'selected' : '' }}>
                             {{ $genre->name }}

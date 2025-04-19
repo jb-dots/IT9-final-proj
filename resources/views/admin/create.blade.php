@@ -133,6 +133,13 @@
                 @enderror
             </div>
             <div class="form-group">
+                <label for="publisher">Publisher</label>
+                <input type="text" name="publisher" id="publisher" value="{{ old('publisher') }}">
+                @error('publisher')
+                    <div class="error">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="form-group">
                 <label for="cover_image">Cover Image</label>
                 <input type="file" name="cover_image" id="cover_image">
                 @error('cover_image')
@@ -142,6 +149,7 @@
             <div class="form-group">
                 <label for="genre_id">Genre</label>
                 <select name="genre_id" id="genre_id">
+                    <option value="">Select a Genre</option> <!-- Added placeholder option -->
                     @foreach ($genres as $genre)
                         <option value="{{ $genre->id }}" {{ old('genre_id') == $genre->id ? 'selected' : '' }}>
                             {{ $genre->name }}
