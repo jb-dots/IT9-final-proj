@@ -152,7 +152,7 @@
                 <tbody>
                     @foreach($borrowedBooks as $borrowedBook)
                         <tr>
-                            <td>{{ $book = $borrowedBook->book & $book->title }}</td>
+                            <td>{{ $borrowedBook->book->title }}</td>
                             <td>{{ $borrowedBook->user->name }}</td>
                             <td>{{ $borrowedBook->user->contact_no ?? 'N/A' }}</td>
                             <td>{{ $borrowedBook->user->address ?? 'N/A' }}</td>

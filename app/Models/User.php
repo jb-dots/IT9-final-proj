@@ -57,7 +57,9 @@ class User extends Authenticatable
         return $this->hasMany(BorrowedBook::class);
     }
     
-    // app/Models/User.php
+    /**
+     * Get the transactions for the user.
+     */
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
@@ -73,6 +75,9 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /**
+     * Get the ratings for the user.
+     */
     public function ratings()
     {
         return $this->hasMany(Rating::class);
