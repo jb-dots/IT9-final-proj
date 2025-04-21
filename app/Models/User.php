@@ -73,4 +73,23 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class);
+    }
+
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->membership_id)) {
+                // Get max numeric part of membership_id
+                $maxId = static::whereNotNull('membership_id')
+                    ->selectRaw('MAX(CAST(SUBSTRING(membership_id, 4) AS UNSIGNED)) as max_id')
+                    ->value('max_id');
+
+                $nextId = $maxId ? $maxId + 1 : 1;
+                $user->membership_id = 'GA-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
+            }
+        });
+    }
 }

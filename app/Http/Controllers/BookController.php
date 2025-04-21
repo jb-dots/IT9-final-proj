@@ -24,19 +24,46 @@ class BookController extends Controller
     // Updated show method to display a single book's description
     public function show($id)
     {
-        $book = Book::findOrFail($id);
-        return view('books.description', compact('book')); // Points to description.blade.php
+        $book = Book::with('ratings')->findOrFail($id);
+        $averageRating = $book->ratings()->avg('rating');
+        return view('books.description', compact('book', 'averageRating')); // Points to description.blade.php
     }
 
     // New method to handle genre display (replacing old show logic)
     public function showGenre($id)
     {
         $genre = Genre::findOrFail($id);
-        $books = $genre->books()->when(request('search'), function ($query, $search) {
+        $books = $genre->books()->with('ratings')->when(request('search'), function ($query, $search) {
             return $query->where('title', 'like', "%{$search}%")
                         ->orWhere('author', 'like', "%{$search}%");
         })->get();
+
+        // Add average_rating and rating_count attribute to each book
+        $books->map(function ($book) {
+            $book->average_rating = $book->ratings->avg('rating') ?? 0;
+            $book->rating_count = $book->ratings->count();
+            return $book;
+        });
+
         return view('genre.show', compact('genre', 'books'));
+    }
+
+    public function rateBook(Request $request, $id)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+        ]);
+
+        $book = Book::findOrFail($id);
+        $user = $request->user();
+
+        // Update or create rating for this user and book
+        $rating = $book->ratings()->updateOrCreate(
+            ['user_id' => $user->id],
+            ['rating' => $request->rating]
+        );
+
+        return redirect()->route('books.show', $book->id)->with('success', 'Your rating has been submitted.');
     }
 
     public function create()
@@ -50,6 +77,8 @@ class BookController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
+            'publisher' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'genre_id' => 'required|exists:genres,id',
         ]);
@@ -57,6 +86,8 @@ class BookController extends Controller
         $book = new Book();
         $book->title = $request->title;
         $book->author = $request->author;
+        $book->publisher = $request->publisher;
+        $book->description = $request->description;
         $book->genre_id = $request->genre_id;
 
         if ($request->hasFile('cover_image')) {
@@ -79,6 +110,8 @@ class BookController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'author' => 'required|string|max:255',
+            'publisher' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'genre_id' => 'required|exists:genres,id',
             'is_borrowed' => 'boolean',
@@ -86,6 +119,8 @@ class BookController extends Controller
 
         $book->title = $request->title;
         $book->author = $request->author;
+        $book->publisher = $request->publisher;
+        $book->description = $request->description;
         $book->genre_id = $request->genre_id;
         $book->is_borrowed = $request->boolean('is_borrowed', $book->is_borrowed);
 

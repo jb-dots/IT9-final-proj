@@ -1,37 +1,40 @@
 <?php
+// app/Http/Controllers/AdminController.php
 namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Genre;
 use App\Models\BorrowedBook;
 use App\Models\Transaction;
+use App\Models\StockHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class AdminController extends Controller
 {
     public function __construct()
     {
-        // Middleware handled by routes
+        // Removed 'admin' middleware; handled by route middleware 'role:admin' in web.php
     }
 
     public function index()
     {
-        $lateFeePerDay = 0.50;
+        $lateFeePerDay = 0.50; // $0.50 per day late
 
-        // Clear any query cache to ensure fresh data
-        \Illuminate\Support\Facades\Cache::flush();
-
+        // Fetch all books
         $books = Book::with('genre')->get();
-        \Log::info('Books fetched for dashboard', $books->toArray());
 
+        // Fetch all genres
         $genres = Genre::orderBy('name')->get();
+
+        // Fetch borrowed books with user information
         $borrowedBooks = BorrowedBook::with(['book', 'user'])
             ->orderBy('borrowed_at', 'desc')
             ->get();
 
+        // Calculate and update late fees for overdue books
         foreach ($borrowedBooks as $borrowedBook) {
             if (!$borrowedBook->returned_at && $borrowedBook->due_date < now()) {
                 $daysLate = now()->diffInDays($borrowedBook->due_date);
@@ -42,6 +45,7 @@ class AdminController extends Controller
             }
         }
 
+        // Refresh the borrowed books collection
         $borrowedBooks = BorrowedBook::with(['book', 'user'])
             ->orderBy('borrowed_at', 'desc')
             ->get();
@@ -58,45 +62,38 @@ class AdminController extends Controller
     public function store(Request $request)
     {
         try {
-            \Log::info('Raw request data', $request->all());
-
-            DB::beginTransaction();
-
             $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'nullable|string|max:255',
                 'publisher' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
                 'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'genre_id' => 'required|exists:genres,id',
+                'quantity' => 'required|integer|min:0',
             ]);
 
             $coverImagePath = $request->file('cover_image')->store('images', 'public');
 
-            $data = [
+            $book = Book::create([
                 'title' => $request->title,
                 'author' => $request->author,
                 'publisher' => $request->publisher,
+                'description' => $request->description,
                 'cover_image' => $coverImagePath,
                 'genre_id' => $request->genre_id,
-                'quantity' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+                'quantity' => $request->quantity,
+            ]);
 
-            \Log::info('Attempting to create book', $data);
-
-            $bookId = DB::table('books')->insertGetId($data);
-
-            \Log::info('Book created successfully', ['book_id' => $bookId]);
-
-            $book = Book::find($bookId);
-
-            DB::commit();
+            // Log the initial stock addition
+            StockHistory::create([
+                'book_id' => $book->id,
+                'quantity_change' => $request->quantity,
+                'action' => 'stock_in',
+                'performed_by' => Auth::user()->email,
+            ]);
 
             return redirect()->route('admin.index')->with('success', 'Book added successfully.');
         } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Failed to add book: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->back()->with('error', 'Failed to add book: ' . $e->getMessage());
         }
     }
@@ -110,14 +107,11 @@ class AdminController extends Controller
     public function update(Request $request, Book $book)
     {
         try {
-            \Log::info('Raw request data for update', $request->all());
-
-            DB::beginTransaction();
-
             $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'nullable|string|max:255',
                 'publisher' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
                 'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'genre_id' => 'required|exists:genres,id',
             ]);
@@ -126,48 +120,22 @@ class AdminController extends Controller
                 'title' => $request->title,
                 'author' => $request->author,
                 'publisher' => $request->publisher,
+                'description' => $request->description,
                 'genre_id' => $request->genre_id,
             ];
 
             if ($request->hasFile('cover_image')) {
+                // Delete the old image
                 if ($book->cover_image) {
                     Storage::disk('public')->delete($book->cover_image);
                 }
                 $data['cover_image'] = $request->file('cover_image')->store('images', 'public');
             }
 
-            \Log::info('Book state before update', [
-                'book_id' => $book->id,
-                'current_data' => $book->toArray(),
-            ]);
-
-            \Log::info('Attempting to update book', [
-                'book_id' => $book->id,
-                'data' => $data,
-            ]);
-
-            $result = DB::table('books')
-                ->where('id', $book->id)
-                ->update($data);
-
-            \Log::info('Update result', [
-                'book_id' => $book->id,
-                'result' => $result,
-            ]);
-
-            $book->refresh();
-
-            \Log::info('Book state after update', [
-                'book_id' => $book->id,
-                'updated_data' => $book->toArray(),
-            ]);
-
-            DB::commit();
+            $book->update($data);
 
             return redirect()->route('admin.index')->with('success', 'Book updated successfully.');
         } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Failed to update book: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->back()->with('error', 'Failed to update book: ' . $e->getMessage());
         }
     }
@@ -180,9 +148,18 @@ class AdminController extends Controller
             ]);
 
             if ($request->status === 'returned' && $borrowedBook->status === 'borrowed') {
+                // Increase the book's quantity when returned
                 $book = $borrowedBook->book;
                 $book->quantity += 1;
                 $book->save();
+
+                // Log the stock change
+                StockHistory::create([
+                    'book_id' => $book->id,
+                    'quantity_change' => 1,
+                    'action' => 'stock_in',
+                    'performed_by' => Auth::user()->email,
+                ]);
             }
 
             $borrowedBook->update([
@@ -199,10 +176,12 @@ class AdminController extends Controller
     public function markAsPaid(Request $request, BorrowedBook $borrowedBook)
     {
         try {
+            // Ensure the book has a late fee
             if ($borrowedBook->late_fee <= 0) {
                 return redirect()->route('admin.index')->with('error', 'No late fee to pay for this book.');
             }
 
+            // Record the payment in the transactions table
             Transaction::create([
                 'user_id' => $borrowedBook->user_id,
                 'amount' => $borrowedBook->late_fee,
@@ -210,6 +189,7 @@ class AdminController extends Controller
                 'description' => 'Payment for late fee on book: ' . $borrowedBook->book->title,
             ]);
 
+            // Clear the late fee
             $borrowedBook->update(['late_fee' => 0]);
 
             return redirect()->route('admin.index')->with('success', 'Late fee marked as paid.');
@@ -220,7 +200,8 @@ class AdminController extends Controller
 
     public function adjustStock(Book $book)
     {
-        return view('admin.adjust-stock', compact('book'));
+        $stockHistories = $book->stockHistories()->orderBy('created_at', 'desc')->get();
+        return view('admin.adjust-stock', compact('book', 'stockHistories'));
     }
 
     public function updateStock(Request $request, Book $book)
@@ -245,6 +226,14 @@ class AdminController extends Controller
             }
 
             $book->save();
+
+            // Log the stock change
+            StockHistory::create([
+                'book_id' => $book->id,
+                'quantity_change' => $action === 'stock_in' ? $quantityChange : -$quantityChange,
+                'action' => $action,
+                'performed_by' => Auth::user()->email,
+            ]);
 
             return redirect()->route('admin.index')->with('success', 'Book stock updated successfully.');
         } catch (\Exception $e) {

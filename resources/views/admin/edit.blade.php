@@ -66,7 +66,7 @@
         }
 
         .current-image img {
-            max-width: 100px;
+            max-width: 500px;
             border-radius: 4px;
         }
 
@@ -111,7 +111,7 @@
     <div class="form-container">
         <a href="{{ route('admin.index') }}" class="back-btn">Back to Dashboard</a>
         <h2>Edit Book</h2>
-        <form action="{{ route('admin.update', $book) }}" method="POST" enctype="multipart/form-data">
+<form action="{{ route('admin.books.update', $book) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="form-group">
@@ -136,11 +136,18 @@
                 @enderror
             </div>
             <div class="form-group">
+                <label for="description">Book Description</label>
+                <textarea name="description" id="description" rows="8" style="width: 100%; color: #121246;">{{ old('description', $book->description) }}</textarea>
+                @error('description')
+                    <div class="error">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="form-group">
                 <label for="cover_image">Cover Image</label>
                 <input type="file" name="cover_image" id="cover_image">
                 <div class="current-image">
                     <p>Current Image:</p>
-                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}"> <!-- Updated path -->
+                    <img src="{{asset('storage/' .  $book->cover_image) }}" alt="{{ $book->title }}">
                 </div>
                 @error('cover_image')
                     <div class="error">{{ $message }}</div>
@@ -149,7 +156,6 @@
             <div class="form-group">
                 <label for="genre_id">Genre</label>
                 <select name="genre_id" id="genre_id">
-                    <option value="">Select a Genre</option> <!-- Added placeholder option -->
                     @foreach ($genres as $genre)
                         <option value="{{ $genre->id }}" {{ old('genre_id', $book->genre_id) == $genre->id ? 'selected' : '' }}>
                             {{ $genre->name }}

@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Admin\GenreController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\FavoriteController;
@@ -25,14 +24,17 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('dashboard');
     })->name('home');
 
+    // Catalog routes
+    Route::get('/catalogs/selection', [CatalogController::class, 'selection'])->name('catalog.selection');
     Route::get('/catalogs', [CatalogController::class, 'index'])->name('catalogs');
-    Route::get('/genres/{genre}', [CatalogController::class, 'show'])->name('genre.show');
-    Route::get('/catalogs/borrow/{id}', [CatalogController::class, 'borrow'])->name('catalogs.borrow');
-    Route::post('/catalogs/borrow/{id}', [CatalogController::class, 'storeBorrow'])->name('catalogs.borrow.store');
-    
+
+    // Genre route (for genre page, show.blade.php)
+    Route::get('/genres/{id}', [BookController::class, 'showGenre'])->name('genre.show');
+
     // Book routes
     Route::get('/books/{id}', [BookController::class, 'show'])->name('books.show'); // For description.blade.php
     Route::post('/books/borrow/{book}', [BookController::class, 'borrow'])->name('books.borrow');
+    Route::post('/books/{id}/rate', [BookController::class, 'rateBook'])->name('books.rate');
 
     // Favorites routes
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites');
@@ -48,26 +50,20 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Admin routes
-    Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
-        // Main Admin Routes
+    Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin.index');
         Route::get('/create', [AdminController::class, 'create'])->name('admin.create');
         Route::post('/store', [AdminController::class, 'store'])->name('admin.store');
         Route::get('/edit/{book}', [AdminController::class, 'edit'])->name('admin.edit');
         Route::put('/update/{book}', [AdminController::class, 'update'])->name('admin.update');
+        Route::put('/borrow-status/{borrowedBook}', [AdminController::class, 'updateBorrowStatus'])->name('admin.updateBorrowStatus');
+        Route::post('/mark-as-paid/{borrowedBook}', [AdminController::class, 'markAsPaid'])->name('admin.markAsPaid');
         Route::get('/adjust-stock/{book}', [AdminController::class, 'adjustStock'])->name('admin.adjustStock');
         Route::post('/update-stock/{book}', [AdminController::class, 'updateStock'])->name('admin.updateStock');
-        Route::post('/update-borrow-status/{borrowedBook}', [AdminController::class, 'updateBorrowStatus'])->name('admin.updateBorrowStatus');
-        Route::post('/mark-as-paid/{borrowedBook}', [AdminController::class, 'markAsPaid'])->name('admin.markAsPaid');
-    
-        // Genre Routes (Updated to use GenreController)
-        Route::get('/genres/create', [GenreController::class, 'create'])->name('admin.genres.create');
-        Route::post('/genres', [GenreController::class, 'store'])->name('admin.genres.store');
-        Route::get('/genres/{genre}/edit', [GenreController::class, 'edit'])->name('admin.genres.edit');
-        Route::put('/genres/{genre}', [GenreController::class, 'update'])->name('admin.genres.update');
-        Route::delete('/genres/{genre}', [GenreController::class, 'destroy'])->name('admin.genres.destroy');
+    });
 
-        // Additional Admin Book Routes
+    // Additional admin book routes
+    Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/books', [BookController::class, 'adminIndex'])->name('admin.books.index');
         Route::get('/books/create', [BookController::class, 'create'])->name('admin.books.create');
         Route::post('/books', [BookController::class, 'store'])->name('admin.books.store');

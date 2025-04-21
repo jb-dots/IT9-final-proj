@@ -27,6 +27,12 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Add average rating and rating count to each trending book
+        foreach ($books as $book) {
+            $book->average_rating = \App\Models\Rating::where('book_id', $book->id)->avg('rating') ?? 0;
+            $book->rating_count = \App\Models\Rating::where('book_id', $book->id)->count();
+        }
+
         // Fetch top books (most borrowed)
         $topBooks = Book::select('books.*')
             ->leftJoinSub(
@@ -41,6 +47,12 @@ class DashboardController extends Controller
             ->orderBy('borrow_counts.borrow_count', 'desc')
             ->take(5)
             ->get();
+
+        // Add average rating and rating count to each top book
+        foreach ($topBooks as $book) {
+            $book->average_rating = \App\Models\Rating::where('book_id', $book->id)->avg('rating') ?? 0;
+            $book->rating_count = \App\Models\Rating::where('book_id', $book->id)->count();
+        }
 
         // Fetch most read books (most returned)
         $mostReadBooks = Book::select('books.*')
@@ -58,7 +70,18 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('dashboard', compact('borrowedBooks', 'overdueCount', 'books', 'topBooks', 'mostReadBooks'));
+        // Add average rating and rating count to each most read book
+        foreach ($mostReadBooks as $book) {
+            $book->average_rating = \App\Models\Rating::where('book_id', $book->id)->avg('rating') ?? 0;
+            $book->rating_count = \App\Models\Rating::where('book_id', $book->id)->count();
+        }
+
+        // Fetch user's average rating and rating count
+        $userRatings = \App\Models\Rating::where('user_id', Auth::id());
+        $averageRating = $userRatings->avg('rating') ?? 0;
+        $ratingCount = $userRatings->count();
+
+        return view('dashboard', compact('borrowedBooks', 'overdueCount', 'books', 'topBooks', 'mostReadBooks', 'averageRating', 'ratingCount'));
     }
 
     public function borrow(Request $request, Book $book)

@@ -3,6 +3,7 @@
 <html lang="en">
 <head>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Grand Archives</title>
@@ -21,6 +22,15 @@
             background: #121246;
             color: #fff;
             overflow-x: hidden;
+        }
+
+        .fa-star {
+            font-size: 18px;
+            color: #ccc;
+        }
+
+        .checked {
+            color: #ffca08;
         }
 
         .home-container {
@@ -179,7 +189,7 @@
         }
 
         .book-card p {
-            color: #d4a373;
+            color: #121246;
             font-family: "Inter-Regular", sans-serif;
             font-size: 14px;
             white-space: nowrap;
@@ -326,6 +336,23 @@
                 <div class="home-title">DASHBOARD</div>
             </div>
 
+            <div style="margin: 20px auto; max-width: 1100px; background: #ded9c3; border-radius: 8px; padding: 15px; color: #121246; display: flex; align-items: center; gap: 10px;">
+                <span>My Ratings:</span>
+                <div style="display: flex; gap: 5px; font-size: 24px; color: #ffca08;">
+                    @php
+                        $roundedRating = round($averageRating);
+                    @endphp
+                    @for ($i = 1; $i <= 5; $i++)
+                        @if ($i <= $roundedRating)
+                            <span class="fa fa-star checked"></span>
+                        @else
+                            <span class="fa fa-star"></span>
+                        @endif
+                    @endfor
+                </div>
+                <span>({{ $ratingCount }} ratings)</span>
+            </div>
+
             @if(session('success'))
                 <div class="message success">{{ session('success') }}</div>
             @endif
@@ -342,73 +369,122 @@
             <!-- Trending Books -->
             <div class="trending">Trending</div>
             <div class="book-container">
-                @forelse($books as $book)
-                    <div class="book-card">
-                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
-                        <div class="book-info">
-                            <p>{{ $book->title }}</p>
-                            <div class="quantity">Available: {{ $book->quantity }}</div>
-                            @if($book->quantity > 0)
-                                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="action-button">Borrow</button>
-                                </form>
-                            @else
-                                <span class="out-of-stock">Out of Stock</span>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <p style="color: #121246; padding: 20px;">No trending books available.</p>
-                @endforelse
+@forelse($books as $book)
+    <div class="book-card">
+        <a href="{{ route('books.show', $book->id) }}">
+            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+        </a>
+        <div class="book-info">
+            <a href="{{ route('books.show', $book->id) }}">
+                <p>{{ $book->title }}</p>
+            </a>
+            <div style="display: flex; align-items: center; gap: 5px; color: #ffca08; font-size: 18px; margin-bottom: 5px;">
+                @php
+                    $roundedRating = round($book->average_rating);
+                @endphp
+                @for ($i = 1; $i <= 5; $i++)
+                    @if ($i <= $roundedRating)
+                        <span class="fa fa-star checked"></span>
+                    @else
+                        <span class="fa fa-star"></span>
+                    @endif
+                @endfor
+                <span style="color: #121246; font-size: 14px; margin-left: 8px;">({{ number_format($book->average_rating, 2) }}/5)</span>
+            </div>
+            <div class="quantity">Available: {{ $book->quantity }}</div>
+                @if($book->quantity > 0)
+                    <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                        @csrf
+                    </form>
+                @else
+                    <span class="out-of-stock">Out of Stock</span>
+                @endif
+            </div>
+    </div>
+@empty
+    <p style="color: #121246; padding: 20px;">No trending books available.</p>
+@endforelse
             </div>
 
             <!-- Top Books -->
             <div class="trending2">Top Books</div>
             <div class="book-container">
-                @forelse($topBooks as $book)
-                    <div class="book-card">
-                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
-                        <div class="book-info">
-                            <p>{{ $book->title }}</p>
-                            <div class="quantity">Available: {{ $book->quantity }}</div>
-                            @if($book->quantity > 0)
-                                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="action-button">Borrow</button>
-                                </form>
-                            @else
-                                <span class="out-of-stock">Out of Stock</span>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <p style="color: #121246; padding: 20px;">No top books available.</p>
-                @endforelse
+@forelse($topBooks as $book)
+    <div class="book-card">
+        <a href="{{ route('books.show', $book->id) }}">
+            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+        </a>
+        <div class="book-info">
+            <a href="{{ route('books.show', $book->id) }}">
+                <p>{{ $book->title }}</p>
+            </a>
+            <div style="display: flex; align-items: center; gap: 5px; color: #ffca08; font-size: 18px; margin-bottom: 5px;">
+                @php
+                    $roundedRating = round($book->average_rating);
+                @endphp
+                @for ($i = 1; $i <= 5; $i++)
+                    @if ($i <= $roundedRating)
+                        <span class="fa fa-star checked"></span>
+                    @else
+                        <span class="fa fa-star"></span>
+                    @endif
+                @endfor
+                <span style="color: #121246; font-size: 14px; margin-left: 8px;">({{ number_format($book->average_rating, 2) }}/5)</span>
+            </div>
+            <div class="quantity">Available: {{ $book->quantity }}</div>
+                @if($book->quantity > 0)
+                    <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                        @csrf
+                        </form>
+                @else
+                    <span class="out-of-stock">Out of Stock</span>
+                @endif
+            </div>
+    </div>
+@empty
+    <p style="color: #121246; padding: 20px;">No top books available.</p>
+@endforelse
             </div>
 
             <!-- Most Read Books -->
             <div class="trending3">Most Read</div>
             <div class="book-container">
-                @forelse($mostReadBooks as $book)
-                    <div class="book-card">
-                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
-                        <div class="book-info">
-                            <p>{{ $book->title }}</p>
-                            <div class="quantity">Available: {{ $book->quantity }}</div>
-                            @if($book->quantity > 0)
-                                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="action-button">Borrow</button>
-                                </form>
-                            @else
-                                <span class="out-of-stock">Out of Stock</span>
-                            @endif
-                        </div>
-                    </div>
-                @empty
-                    <p style="color: #121246; padding: 20px;">No most read books available.</p>
-                @endforelse
+@forelse($mostReadBooks as $book)
+    <div class="book-card">
+        <a href="{{ route('books.show', $book->id) }}">
+            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+        </a>
+            <div class="book-info">
+                <a href="{{ route('books.show', $book->id) }}">
+                    <p>{{ $book->title }}</p>
+                </a>
+                <div style="display: flex; align-items: center; gap: 5px; color: #ffca08; font-size: 18px; margin-bottom: 5px;">
+                    @php
+                        $roundedRating = round($book->average_rating);
+                    @endphp
+                    @for ($i = 1; $i <= 5; $i++)
+                        @if ($i <= $roundedRating)
+                            <span class="fa fa-star checked"></span>
+                        @else
+                            <span class="fa fa-star"></span>
+                        @endif
+                    @endfor
+                    <span style="color: #121246; font-size: 14px; margin-left: 8px;">({{ number_format($book->average_rating, 2) }}/5)</span>
+                </div>
+                <div class="quantity">Available: {{ $book->quantity }}</div>
+                @if($book->quantity > 0)
+                    <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="action-button">Borrow</button>
+                    </form>
+                @else
+                    <span class="out-of-stock">Out of Stock</span>
+                @endif
+            </div>
+    </div>
+@empty
+    <p style="color: #121246; padding: 20px;">No most read books available.</p>
+@endforelse
             </div>
 
             <!-- Borrowed Books -->

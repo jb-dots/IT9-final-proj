@@ -1,3 +1,4 @@
+<!-- resources/views/genre/show.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,12 +7,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $genre->name }} - Grand Archives</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    @vite(['resources/css/app.css'])
+
     <style>
+        /* Reset styles */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            border: none;
+            text-decoration: none;
+            -webkit-font-smoothing: antialiased;
         }
 
         body, html {
@@ -22,6 +29,7 @@
             overflow-x: hidden;
         }
 
+        /* Container for layout */
         .genre-container {
             display: flex;
             width: 100%;
@@ -29,20 +37,35 @@
             position: relative;
         }
 
+        /* Navigation (consistent with catalog-selection.blade.php) */
         .navigation {
             width: 250px;
-            background: #121246;
             height: 100vh;
             position: fixed;
-            left: -250px;
+            left: -309px;
             top: 0;
             transition: left 0.3s ease-in-out;
             z-index: 10;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            overflow-y: auto;
         }
 
         .navigation.active {
             left: 0;
+        }
+
+        /* Main content */
+        .genre-page {
+            flex: 1;
+            background: #f9f8f4;
+            min-height: 100vh;
+            padding-left: 0px;
+            transition: padding-left 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .genre-page.nav-active {
+            padding-left: 310px;
         }
 
         .menu-button {
@@ -54,7 +77,6 @@
             color: #121246;
             font-size: 28px;
             background: transparent;
-            border: none;
             transition: color 0.2s;
         }
 
@@ -62,90 +84,16 @@
             color: #b5835a;
         }
 
-        .genre-page {
-            flex: 1;
-            background: #f9f8f4;
-            min-height: 100vh;
-            padding-left: 0px;
-            transition: padding-left 0.3s ease-in-out;
-        }
-
-        .genre-page.nav-active {
-            padding-left: 310px;
-        }
-
-        .header {
-            background: #ded9c3;
-            width: 100%;
-            height: 80px;
-            position: fixed;
-            left: 0;
-            top: 0;
-            border-bottom: 2px solid #b5835a;
-            z-index: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .genre-title {
-            color: #121246;
-            text-align: center;
-            font-family: "Inter-Regular", sans-serif;
-            font-size: 28px;
-            font-weight: 600;
-            z-index: 2;
-        }
-
-        .search-container {
-            display: flex;
-            justify-content: center;
-            margin: 100px 0 40px;
-        }
-
-        .rectangle-7 {
-            background: #d9d9d9;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 500px;
-            height: 47px;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            position: relative;
-        }
-
-        .search-input {
-            flex: 1;
-            background: transparent;
-            color: #121246;
-            font-family: "Inter-Regular", sans-serif;
-            font-size: 16px;
-            outline: none;
-            border: none;
-        }
-
-        .magnifying-1 {
-            width: 24px;
-            height: 24px;
-            margin-left: 10px;
-            cursor: pointer;
-        }
-
-        .book-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            padding: 0 20px 40px;
-            margin-bottom: 40px;
-        }
-
+        /* Book card styles similar to dashboard */
         .book-card {
+            width: 100%;
+            height: 300px; /* Increased to accommodate quantity and button */
             background: #b5835a;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
+            border-radius: 15px;
+            border: 1px solid #b5835a;
+            overflow: hidden;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
         }
 
         .book-card:hover {
@@ -155,21 +103,14 @@
 
         .book-card img {
             width: 100%;
-            height: 150px;
+            height: 180px;
             object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            border-radius: 10px 10px 0 0;
         }
 
-        .book-card h3 {
-            color: #121246;
-            font-family: "Inter-Regular", sans-serif;
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .book-card .book-info {
+            padding: 10px;
+            text-align: center;
         }
 
         .book-card p {
@@ -179,84 +120,221 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-bottom: 5px;
         }
 
-        .borrow-btn {
-            display: inline-block;
+        .book-card .quantity {
+            color: #fff;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .book-card .action-button {
+            background: #121246;
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .book-card .action-button:hover {
+            background: #1e2a78;
+        }
+
+        .book-card .out-of-stock {
+            color: #ff6b6b;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .book-card {
+                height: 250px;
+            }
+
+            .book-card img {
+                height: 130px;
+            }
+
+            .book-card p {
+                font-size: 12px;
+            }
+
+            .book-card .quantity, .book-card .action-button, .book-card .out-of-stock {
+                font-size: 10px;
+            }
+        }
+
+        .rectangle-5 {
+            background: #ded9c3;
+            width: 100%;
+            height: 80px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            border-bottom: 2px solid #b5835a;
+            z-index: 1;
+        }
+
+        .genre-title {
+            color: #121246;
+            text-align: center;
+            font-family: "Inter-Regular", sans-serif;
+            font-size: 28px;
+            font-weight: 600;
+            position: relative;
+            top: 25px;
+            z-index: 2;
+        }
+
+        /* Search bar */
+        .search-container {
+            margin: 100px auto 40px;
+            width: 100%;
+            max-width: 537px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .rectangle-7 {
+            background: #d9d9d9;
+            border-radius: 8px;
+            width: 100%;
+            height: 47px;
+            padding: 0 50px 0 15px;
+            font-family: "Inter-Regular", sans-serif;
+            font-size: 16px;
+            color: #121246;
+            outline: none;
+            border: none;
+        }
+
+        .magnifying-1 {
+            width: 41px;
+            height: 41px;
+            position: absolute;
+            right: 5px;
+            top: 3px;
+            cursor: pointer;
+        }
+
+        /* Book grid */
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1102px;
+            margin: 0 auto 40px;
+            padding: 0 20px;
+        }
+
+        .book-item {
+            position: relative;
+            text-align: center;
+        }
+
+        .book-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            object-fit: cover;
+            aspect-ratio: 3/4;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .book-item img:hover {
+            transform: scale(1.05);
+        }
+
+        .book-item .borrow-form {
             margin-top: 10px;
-            padding: 8px 16px;
+        }
+
+        .book-item .borrow-button {
+            padding: 5px 10px;
             background: #d4a373;
             color: #121246;
             border-radius: 4px;
-            text-decoration: none;
-            font-family: "Inter-Regular", sans-serif;
             font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            border: none;
+            cursor: pointer;
         }
 
-        .borrow-btn:hover {
+        .book-item .borrow-button:hover {
             background: #b5835a;
         }
 
-        .pagination {
-            display: flex;
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
             justify-content: center;
             align-items: center;
-            margin-top: 20px;
-            margin-bottom: 40px;
-            font-family: "Inter-Regular", sans-serif;
-            font-size: 14px;
-            color: #ded9c3;
         }
 
-        .pagination a, .pagination span {
-            color: #121246;
-            padding: 4px 8px;
-            text-decoration: none;
-            margin: 0 4px;
-            border-radius: 4px;
-            transition: background-color 0.3s ease, color 0.3s ease;
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
         }
 
-        .pagination a:hover {
-            background-color: #b5835a;
-            color: #121246;
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #d4a373;
+            font-size: 36px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s ease;
         }
 
-        .pagination .current {
-            background-color: #ded9c3;
-            color: #121246;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .pagination .disabled {
+        .modal-close:hover {
             color: #b5835a;
-            opacity: 0.5;
-            cursor: not-allowed;
         }
 
-        .pagination .chevron {
-            font-size: 18px;
-            vertical-align: middle;
-        }
-
-        .message {
+        /* Success/Error Messages */
+        .success-message, .error-message {
             text-align: center;
             padding: 10px;
-            margin: 10px 20px;
+            margin: 10px auto;
+            border-radius: 4px;
+            max-width: 500px;
         }
 
-        .message.success {
-            background: #6aa933;
+        .success-message {
+            background: #b5835a;
+            color: #121246;
+        }
+
+        .error-message {
+            background: #ff6b6b;
             color: #fff;
         }
 
-        .message.error {
-            background: #ff3333;
-            color: #fff;
-        }
-
+        /* Responsive adjustments */
         @media (max-width: 768px) {
+            .navigation {
+                width: 250px;
+                left: -250px;
+            }
+
             .genre-page {
                 padding-left: 50px;
             }
@@ -269,43 +347,25 @@
                 font-size: 22px;
             }
 
-            .rectangle-7 {
+            .search-container {
                 max-width: 400px;
             }
 
             .book-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 15px;
             }
 
-            .book-card h3 {
-                font-size: 14px;
-            }
-
-            .book-card p {
+            .book-item .borrow-button {
                 font-size: 12px;
-            }
-
-            .borrow-btn {
-                font-size: 12px;
-                padding: 6px 12px;
-            }
-
-            .pagination {
-                font-size: 12px;
-            }
-
-            .pagination a, .pagination span {
-                padding: 3px 6px;
-            }
-
-            .pagination .chevron {
-                font-size: 16px;
+                padding: 4px 8px;
             }
         }
 
         @media (max-width: 480px) {
             .navigation {
                 width: 200px;
+                left: -200px;
             }
 
             .genre-page.nav-active {
@@ -317,82 +377,117 @@
                 top: 15px;
             }
 
-            .rectangle-7 {
+            .search-container {
                 max-width: 300px;
             }
 
-            .pagination {
+            .book-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
+
+            .book-item .borrow-button {
                 font-size: 10px;
+                padding: 3px 6px;
             }
 
-            .pagination a, .pagination span {
-                padding: 2px 4px;
-            }
-
-            .pagination .chevron {
-                font-size: 14px;
+            .modal-close {
+                font-size: 28px;
+                top: 10px;
+                right: 10px;
             }
         }
     </style>
 </head>
 <body>
     <div class="genre-container">
+        <!-- Navigation Sidebar -->
         <div class="navigation">
             @include('layouts.navigation')
         </div>
+
+        <!-- Main Content -->
         <div class="genre-page">
             <button class="menu-button">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <div class="header">
-                <div class="genre-title">{{ $genre->name }}</div>
-            </div>
+            <div class="rectangle-5"></div>
+            <div class="genre-title">{{ $genre->name }}</div>
             <div class="search-container">
-                <form method="GET" action="{{ route('genre.show', $genre->id) }}" class="rectangle-7">
-                    <input type="text" name="search" class="search-input" placeholder="Search books..." value="{{ request('search') }}" />
+                <form method="GET" action="{{ route('genre.show', $genre->id) }}">
+                    <input type="text" name="search" class="rectangle-7" placeholder="Search books..." value="{{ request('search') }}">
                     <button type="submit" style="background: none; border: none; padding: 0;">
-                        <img class="magnifying-1" src="{{ asset('images/magnifying-10.png') }}" alt="Search" />
+                        <img class="magnifying-1" src="{{ asset('images/magnifying-10.png') }}" alt="Search Icon" />
                     </button>
                 </form>
             </div>
-            @if(session('success'))
-                <div class="message success">{{ session('success') }}</div>
+            @if (session('success'))
+                <div class="success-message">
+                    {{ session('success') }}
+                </div>
             @endif
-            @if(session('error'))
-                <div class="message error">{{ session('error') }}</div>
+            @if (session('error'))
+                <div class="error-message">
+                    {{ session('error') }}
+                </div>
             @endif
             <div class="book-grid">
                 @forelse ($books as $book)
                     <div class="book-card">
-                        <img src="{{ asset($book->cover_image) }}" alt="{{ $book->title }}">
-                        <h3>{{ $book->title }}</h3>
-                        <p>{{ $book->author ?? 'Unknown Author' }}</p>
-                        @if(auth()->check())
-                            <a href="{{ route('catalogs.borrow', $book->id) }}" class="borrow-btn">Borrow</a>
-                        @else
-                            <p style="color: #121246; font-size: 12px; margin-top: 10px;">Please log in to borrow.</p>
-                        @endif
+                        <a href="{{ route('books.show', $book->id) }}">
+                            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+                        </a>
+                        <div class="book-info">
+                            <a href="{{ route('books.show', $book->id) }}">
+                                <p>{{ $book->title }}</p>
+                            </a>
+                            <div style="display: flex; align-items: center; gap: 5px; color: #ffca08; font-size: 12px; margin-bottom: 5px;">
+                                @php
+                                    $roundedRating = round($book->average_rating);
+                                @endphp
+                                @for ($i = 1; $i <= 5; $i++)
+                                    @if ($i <= $roundedRating)
+                                        <span class="fa fa-star checked"></span>
+                                    @else
+                                        <span class="fa fa-star"></span>
+                                    @endif
+                                @endfor
+                                <span style="color: #121246; font-size: 14px; margin-left: 8px;">({{ number_format($book->average_rating, 2) }}/5)</span>
+                            </div>
+                            @if($book->quantity > 0)
+                                <span class="quantity">Available: {{ $book->quantity }}</span>
+                            @else
+                                <span class="out-of-stock">Out of Stock</span>
+                            @endif
+                        </div>
                     </div>
                 @empty
-                    <div class="text-center text-gray-400" style="grid-column: 1 / -1;">No books found in this genre.</div>
+                    <div class="text-center text-gray-400">No books found in this genre.</div>
                 @endforelse
-            </div>
-            <div class="pagination">
-                {{ $books->links('vendor.pagination.custom') }}
             </div>
         </div>
     </div>
+
+    <!-- Remove modal since we're redirecting instead of showing a modal -->
+    <!-- Modal for image viewing is no longer needed -->
+    <!-- <div class="modal" id="imageModal">
+        <span class="modal-close">×</span>
+        <img class="modal-content" id="modalImage">
+    </div> -->
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const menuButton = document.querySelector('.menu-button');
             const navigation = document.querySelector('.navigation');
             const genrePage = document.querySelector('.genre-page');
 
+            // Toggle navigation
             menuButton.addEventListener('click', function() {
                 navigation.classList.toggle('active');
                 genrePage.classList.toggle('nav-active');
             });
         });
     </script>
+    @vite(['resources/js/app.js'])
 </body>
 </html>

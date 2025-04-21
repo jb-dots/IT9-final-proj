@@ -1,4 +1,3 @@
-<!-- resources/views/admin/create.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,7 +47,8 @@
         }
 
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 8px;
             border-radius: 4px;
@@ -140,6 +140,13 @@
                 @enderror
             </div>
             <div class="form-group">
+                <label for="description">Book Description</label>
+                <textarea name="description" id="description" rows="8" style="width: 100%;">{{ old('description') }}</textarea>
+                @error('description')
+                    <div class="error">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="form-group">
                 <label for="cover_image">Cover Image</label>
                 <input type="file" name="cover_image" id="cover_image">
                 @error('cover_image')
@@ -149,7 +156,6 @@
             <div class="form-group">
                 <label for="genre_id">Genre</label>
                 <select name="genre_id" id="genre_id">
-                    <option value="">Select a Genre</option> <!-- Added placeholder option -->
                     @foreach ($genres as $genre)
                         <option value="{{ $genre->id }}" {{ old('genre_id') == $genre->id ? 'selected' : '' }}>
                             {{ $genre->name }}
@@ -157,6 +163,13 @@
                     @endforeach
                 </select>
                 @error('genre_id')
+                    <div class="error">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="form-group">
+                <label for="quantity">Initial Quantity</label>
+                <input type="number" name="quantity" id="quantity" value="{{ old('quantity', 1) }}" min="0">
+                @error('quantity')
                     <div class="error">{{ $message }}</div>
                 @enderror
             </div>

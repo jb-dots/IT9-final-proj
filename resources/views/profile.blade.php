@@ -76,7 +76,7 @@
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
-            z-index: 1;
+            z-index: 1000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -92,11 +92,11 @@
         }
 
         .menu-button {
-            position: absolute; /* Changed to absolute to stay within profile-page */
+            position: fixed; /* Changed to fixed to overlay on rectangle-5 */
             left: 20px;
             top: 20px;
             cursor: pointer;
-            z-index: 20;
+            z-index: 1010;
             color: #121246;
             font-size: 28px;
             background: transparent;
@@ -290,15 +290,6 @@
                 gap: 10px;
             }
         }
-        .images-1-1 {
-            border-radius: 85.5px;
-            width: 171px;
-            height: 171px;
-            object-fit: cover;
-            z-index: 5;
-            position: relative;
-            display: block; /* Ensure it’s visible */
-        }
     </style>
 </head>
 <body>
@@ -337,7 +328,13 @@
                 <div class="library-stats">
                     <div class="stat-item">
                         <span>Membership ID:</span>
-                        <span>{{ Auth::user()->membership_id ?? 'Not assigned' }}</span>
+                        <span>
+                            @if(Auth::user()->membership_id)
+                                {{ str_pad(Auth::user()->membership_id, 6, '0', STR_PAD_LEFT) }}
+                            @else
+                                Not assigned
+                            @endif
+                        </span>
                     </div>
                     <div class="stat-item">
                         <span>Join Date:</span>
