@@ -473,10 +473,6 @@
                 </div>
                 <div class="quantity">Available: {{ $book->quantity }}</div>
                 @if($book->quantity > 0)
-                    <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
-                        @csrf
-                        <button type="submit" class="action-button">Borrow</button>
-                    </form>
                 @else
                     <span class="out-of-stock">Out of Stock</span>
                 @endif

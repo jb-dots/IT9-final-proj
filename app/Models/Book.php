@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Book extends Model
 {
-    protected $fillable = ['title', 'author', 'cover_image', 'genre_id', 'quantity', 'publisher', 'description'];
+protected $fillable = ['title', 'author', 'cover_image', 'genre_id', 'quantity', 'publisher', 'description', 'is_available'];
 
     public function genre()
     {
@@ -21,10 +21,5 @@ class Book extends Model
     public function ratings()
     {
         return $this->hasMany(Rating::class);
-    }
-
-    public function stockHistories()
-    {
-        return $this->hasMany(StockHistory::class);
     }
 }

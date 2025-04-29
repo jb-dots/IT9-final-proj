@@ -20,4 +20,9 @@ class StockHistory extends Model
     {
         return $this->belongsTo(Book::class);
     }
+
+    public function publisher()
+    {
+        return $this->belongsTo(\App\Models\Publisher::class);
+    }
 }

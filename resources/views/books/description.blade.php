@@ -107,6 +107,18 @@
         .star-rating label:hover ~ label {
             color: #ffca08;
         }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background: #d4a373;
+            color: #121246;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background: #b5835a;
+        }
     </style>
 </head>
 <body>
@@ -149,7 +161,9 @@
                 </div>
             </div>
         </div>
-        <a href="{{ route('dashboard') }}" class="back-button">Back to Dashboard</a>
+        
+        {{-- <a href="javascript:void(0);" onclick="history.back();" class="back-button">Back to Previous Page</a> --}}
+        <a href="{{ route('dashboard') }}" class="back-btn">Back to Dashboard</a>
     </div>
     @vite(['resources/js/app.js'])
 </body>
