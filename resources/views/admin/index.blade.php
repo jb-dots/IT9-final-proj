@@ -163,12 +163,12 @@
                             <td>${{ number_format($borrowedBook->late_fee, 2) }}</td>
                             <td>
                                 @if($borrowedBook->status === 'borrowed')
-                                    <form action="{{ route('admin.updateBorrowStatus', $borrowedBook) }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        @method('POST')
-                                        <input type="hidden" name="status" value="returned">
-                                        <button type="submit" class="action-button">Mark as Returned</button>
-                                    </form>
+<form action="{{ route('admin.updateBorrowStatus', $borrowedBook) }}" method="POST" style="display:inline;">
+    @csrf
+    @method('PUT')
+    <input type="hidden" name="status" value="returned">
+    <button type="submit" class="action-button">Mark as Returned</button>
+</form>
                                 @endif
                                 @if($borrowedBook->late_fee > 0)
                                     <form action="{{ route('admin.markAsPaid', $borrowedBook) }}" method="POST" style="display:inline;">

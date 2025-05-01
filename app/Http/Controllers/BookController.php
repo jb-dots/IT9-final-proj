@@ -21,15 +21,13 @@ class BookController extends Controller
         return view('dashboard', compact('books'));
     }
 
-    // Updated show method to display a single book's description
     public function show($id)
     {
         $book = Book::with('ratings')->findOrFail($id);
         $averageRating = $book->ratings()->avg('rating');
-        return view('books.description', compact('book', 'averageRating')); // Points to description.blade.php
+        return view('books.description', compact('book', 'averageRating'));
     }
 
-    // New method to handle genre display (replacing old show logic)
     public function showGenre($id)
     {
         $genre = Genre::findOrFail($id);
@@ -38,7 +36,6 @@ class BookController extends Controller
                         ->orWhere('author', 'like', "%{$search}%");
         })->get();
 
-        // Add average_rating and rating_count attribute to each book
         $books->map(function ($book) {
             $book->average_rating = $book->ratings->avg('rating') ?? 0;
             $book->rating_count = $book->ratings->count();
@@ -57,7 +54,6 @@ class BookController extends Controller
         $book = Book::findOrFail($id);
         $user = $request->user();
 
-        // Update or create rating for this user and book
         $rating = $book->ratings()->updateOrCreate(
             ['user_id' => $user->id],
             ['rating' => $request->rating]
@@ -162,7 +158,7 @@ class BookController extends Controller
             ->first();
 
         if ($existingBorrow) {
-            return redirect()->back()->with('error', 'You have already borrowed this book.');
+            return redirect()->route('transaction')->with('error', 'You have already borrowed this book.');
         }
 
         // Create a new borrowing record
@@ -172,8 +168,13 @@ class BookController extends Controller
             'status' => 'borrowed',
             'borrowed_at' => now(),
             'due_date' => now()->addDays(14),
+            'late_fee' => 0.00,
         ]);
 
-        return redirect()->back()->with('success', 'Book borrowed successfully. Due date: ' . now()->addDays(14)->format('Y-m-d'));
+        // Update book status
+        $book->is_borrowed = true;
+        $book->save();
+
+        return redirect()->route('transaction')->with('success', 'Book borrowed successfully. Due date: ' . now()->addDays(14)->format('Y-m-d'));
     }
 }

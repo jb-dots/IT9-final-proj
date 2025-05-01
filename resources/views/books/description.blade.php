@@ -147,11 +147,11 @@
                         @csrf
                         <label for="rating" style="margin-right: 10px;">Rate this book:</label>
                         <div class="star-rating" style="font-size: 24px; display: flex; gap: 5px; direction: rtl; unicode-bidi: normal;">
-                            <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="5 stars">&#9733;</label>
-                            <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars">&#9733;</label>
-                            <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars">&#9733;</label>
-                            <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars">&#9733;</label>
-                            <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star">&#9733;</label>
+                            <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="5 stars">★</label>
+                            <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars">★</label>
+                            <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars">★</label>
+                            <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars">★</label>
+                            <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star">★</label>
                         </div>
                         <button type="submit" style="margin-left: 10px; padding: 5px 10px; background: #d4a373; color: #121246; border: none; border-radius: 4px; cursor: pointer;">Submit</button>
                     </form>
@@ -162,7 +162,6 @@
             </div>
         </div>
         
-        {{-- <a href="javascript:void(0);" onclick="history.back();" class="back-button">Back to Previous Page</a> --}}
         <a href="{{ route('dashboard') }}" class="back-btn">Back to Dashboard</a>
     </div>
     @vite(['resources/js/app.js'])
