@@ -13,43 +13,35 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Dashboard route (main authenticated page)
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    // Home route (redirects to dashboard)
     Route::get('/home', function () {
         return redirect()->route('dashboard');
     })->name('home');
 
-    // Catalog routes
     Route::get('/catalogs/selection', [CatalogController::class, 'selection'])->name('catalog.selection');
     Route::get('/catalogs', [CatalogController::class, 'index'])->name('catalogs');
 
-    // Genre route (for genre page, show.blade.php)
     Route::get('/genres/{id}', [BookController::class, 'showGenre'])->name('genre.show');
 
-    // Book routes
-    Route::get('/books/{id}', [BookController::class, 'show'])->name('books.show'); // For description.blade.php
+    Route::get('/books/{id}', [BookController::class, 'show'])->name('books.show');
     Route::post('/books/borrow/{book}', [BookController::class, 'borrow'])->name('books.borrow');
+    Route::post('/books/return/{borrowedBook}', [BookController::class, 'returnBook'])->name('books.return');
     Route::post('/books/{id}/rate', [BookController::class, 'rateBook'])->name('books.rate');
 
-    // Favorites routes
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites');
     Route::post('/books/{book}/favorites', [BookController::class, 'addToFavorites'])->name('favorites.add');
 
-    // Transaction route
     Route::get('/transaction', [TransactionController::class, 'index'])->name('transaction');
 
-    // Profile routes
     Route::get('/profile', [ProfileController::class, 'index'])->name('user.profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Admin routes
     Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin.index');
         Route::get('/create', [AdminController::class, 'create'])->name('admin.create');
@@ -61,7 +53,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/adjust-stock/{book}', [AdminController::class, 'adjustStock'])->name('admin.adjustStock');
         Route::post('/update-stock/{book}', [AdminController::class, 'updateStock'])->name('admin.updateStock');
 
-        // Genre routes
         Route::get('/genres/create', [App\Http\Controllers\Admin\GenreController::class, 'create'])->name('admin.genres.create');
         Route::post('/genres', [App\Http\Controllers\Admin\GenreController::class, 'store'])->name('admin.genres.store');
         Route::get('/genres/{genre}/edit', [App\Http\Controllers\Admin\GenreController::class, 'edit'])->name('admin.genres.edit');
@@ -69,8 +60,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/genres/{genre}', [App\Http\Controllers\Admin\GenreController::class, 'destroy'])->name('admin.genres.destroy');
     });
 
-
-    // Dashboard borrow route
     Route::post('/dashboard/borrow/{book}', [DashboardController::class, 'borrow'])->name('dashboard.borrow');
 });
 

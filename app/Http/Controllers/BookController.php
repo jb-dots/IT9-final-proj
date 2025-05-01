@@ -11,7 +11,6 @@ class BookController extends Controller
 {
     public function __construct()
     {
-        // Apply admin middleware only to specific methods
         $this->middleware('admin')->only(['create', 'store', 'edit', 'update', 'toggleStatus']);
     }
 
@@ -150,7 +149,6 @@ class BookController extends Controller
 
     public function borrow(Request $request, Book $book)
     {
-        // Check if the book is already borrowed by the user and not returned
         $existingBorrow = BorrowedBook::where('book_id', $book->id)
             ->where('user_id', Auth::id())
             ->where('status', 'borrowed')
@@ -161,7 +159,6 @@ class BookController extends Controller
             return redirect()->route('transaction')->with('error', 'You have already borrowed this book.');
         }
 
-        // Create a new borrowing record
         BorrowedBook::create([
             'book_id' => $book->id,
             'user_id' => Auth::id(),
@@ -171,10 +168,27 @@ class BookController extends Controller
             'late_fee' => 0.00,
         ]);
 
-        // Update book status
         $book->is_borrowed = true;
         $book->save();
 
         return redirect()->route('transaction')->with('success', 'Book borrowed successfully. Due date: ' . now()->addDays(14)->format('Y-m-d'));
+    }
+
+    public function returnBook(Request $request, BorrowedBook $borrowedBook)
+    {
+        if ($borrowedBook->user_id !== Auth::id()) {
+            return redirect()->route('transaction')->with('error', 'Unauthorized action.');
+        }
+
+        $borrowedBook->update([
+            'status' => 'returned',
+            'returned_at' => now(),
+        ]);
+
+        $book = $borrowedBook->book;
+        $book->is_borrowed = false;
+        $book->save();
+
+        return redirect()->route('transaction')->with('success', 'Book returned successfully.');
     }
 }

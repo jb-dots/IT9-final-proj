@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/TransactionController.php
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -20,10 +19,13 @@ class TransactionController extends Controller
             ->orderBy('borrowed_at', 'desc')
             ->get();
 
-        // Calculate late fees dynamically for each borrowed book
+        // Calculate late fees dynamically, only save if changed
         foreach ($borrowedBooks as $borrowedBook) {
-            $borrowedBook->late_fee = $borrowedBook->calculateLateFee();
-            $borrowedBook->save();
+            $newLateFee = $borrowedBook->calculateLateFee();
+            if ($borrowedBook->late_fee !== $newLateFee) {
+                $borrowedBook->late_fee = $newLateFee;
+                $borrowedBook->save();
+            }
         }
 
         // Fetch books that are due (not returned yet and past due date)
@@ -53,20 +55,23 @@ class TransactionController extends Controller
 
         return view('transactions', compact('borrowedBooks', 'dueBooks', 'returnedBooks', 'dueAmount', 'paymentHistory'));
     }
+
     public function availableBooks()
     {
         $books = Book::where('is_available', true)->get();
         return view('books.available', compact('books'));
     }
+
     public function borrow(Request $request, Book $book)
     {
         // Check if the book is available
         if (!$book->is_available) {
             return redirect()->back()->with('error', 'This book is already borrowed.');
         }
+        $book->update(['is_borrowed' => true]);
     
         // Create a borrowed book record
-        $dueDate = now()->addDays(14); // Due in 14 days
+        $dueDate = now()->addDays(14);
         BorrowedBook::create([
             'user_id' => Auth::id(),
             'book_id' => $book->id,
