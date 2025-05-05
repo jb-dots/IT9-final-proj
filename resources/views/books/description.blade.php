@@ -107,18 +107,6 @@
         .star-rating label:hover ~ label {
             color: #ffca08;
         }
-        .back-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 8px 16px;
-            background: #d4a373;
-            color: #121246;
-            border-radius: 4px;
-            text-decoration: none;
-        }
-        .back-btn:hover {
-            background: #b5835a;
-        }
     </style>
 </head>
 <body>
@@ -138,7 +126,7 @@
                         {{ $book->is_borrowed ? 'Currently Borrowed' : 'Borrow This Book' }}
                     </button>
                 </form>
-
+                
                 <div class="book-rating" style="margin-top: 20px; color: #121246;">
                     <h4>Average Rating: {{ number_format($averageRating ?? 0, 1) }} / 5</h4>
 
@@ -147,11 +135,11 @@
                         @csrf
                         <label for="rating" style="margin-right: 10px;">Rate this book:</label>
                         <div class="star-rating" style="font-size: 24px; display: flex; gap: 5px; direction: rtl; unicode-bidi: normal;">
-                            <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="5 stars">★</label>
-                            <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars">★</label>
-                            <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars">★</label>
-                            <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars">★</label>
-                            <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star">★</label>
+                            <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="5 stars">&#9733;</label>
+                            <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="4 stars">&#9733;</label>
+                            <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="3 stars">&#9733;</label>
+                            <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="2 stars">&#9733;</label>
+                            <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="1 star">&#9733;</label>
                         </div>
                         <button type="submit" style="margin-left: 10px; padding: 5px 10px; background: #d4a373; color: #121246; border: none; border-radius: 4px; cursor: pointer;">Submit</button>
                     </form>
@@ -161,8 +149,7 @@
                 </div>
             </div>
         </div>
-        
-        <a href="{{ route('dashboard') }}" class="back-btn">Back to Dashboard</a>
+        <a href="{{ route('dashboard') }}" class="back-button">Back to Previous Page</a>
     </div>
     @vite(['resources/js/app.js'])
 </body>

@@ -9,12 +9,5 @@ class Supplier extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-    ];
-
-    public function stockHistories()
-    {
-        return $this->hasMany(StockHistory::class);
-    }
+    protected $fillable = ['name'];
 }

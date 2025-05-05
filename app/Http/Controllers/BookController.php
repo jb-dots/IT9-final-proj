@@ -11,6 +11,7 @@ class BookController extends Controller
 {
     public function __construct()
     {
+        // Apply admin middleware only to specific methods
         $this->middleware('admin')->only(['create', 'store', 'edit', 'update', 'toggleStatus']);
     }
 
@@ -20,13 +21,15 @@ class BookController extends Controller
         return view('dashboard', compact('books'));
     }
 
+    // Updated show method to display a single book's description
     public function show($id)
     {
         $book = Book::with('ratings')->findOrFail($id);
         $averageRating = $book->ratings()->avg('rating');
-        return view('books.description', compact('book', 'averageRating'));
+        return view('books.description', compact('book', 'averageRating')); // Points to description.blade.php
     }
 
+    // New method to handle genre display (replacing old show logic)
     public function showGenre($id)
     {
         $genre = Genre::findOrFail($id);
@@ -35,6 +38,7 @@ class BookController extends Controller
                         ->orWhere('author', 'like', "%{$search}%");
         })->get();
 
+        // Add average_rating and rating_count attribute to each book
         $books->map(function ($book) {
             $book->average_rating = $book->ratings->avg('rating') ?? 0;
             $book->rating_count = $book->ratings->count();
@@ -53,6 +57,7 @@ class BookController extends Controller
         $book = Book::findOrFail($id);
         $user = $request->user();
 
+        // Update or create rating for this user and book
         $rating = $book->ratings()->updateOrCreate(
             ['user_id' => $user->id],
             ['rating' => $request->rating]
@@ -149,6 +154,7 @@ class BookController extends Controller
 
     public function borrow(Request $request, Book $book)
     {
+        // Check if the book is already borrowed by the user and not returned
         $existingBorrow = BorrowedBook::where('book_id', $book->id)
             ->where('user_id', Auth::id())
             ->where('status', 'borrowed')
@@ -156,39 +162,28 @@ class BookController extends Controller
             ->first();
 
         if ($existingBorrow) {
-            return redirect()->route('transaction')->with('error', 'You have already borrowed this book.');
+            return redirect()->back()->with('error', 'You have already borrowed this book.');
         }
 
+        // Check if the book quantity is available
+        if ($book->quantity <= 0) {
+            return redirect()->back()->with('error', 'This book is currently not available for borrowing.');
+        }
+
+        // Create a new borrowing record
         BorrowedBook::create([
             'book_id' => $book->id,
             'user_id' => Auth::id(),
             'status' => 'borrowed',
             'borrowed_at' => now(),
             'due_date' => now()->addDays(14),
-            'late_fee' => 0.00,
         ]);
 
+        // Decrement the book quantity by 1 and save
+        $book->quantity -= 1;
         $book->is_borrowed = true;
         $book->save();
 
-        return redirect()->route('transaction')->with('success', 'Book borrowed successfully. Due date: ' . now()->addDays(14)->format('Y-m-d'));
-    }
-
-    public function returnBook(Request $request, BorrowedBook $borrowedBook)
-    {
-        if ($borrowedBook->user_id !== Auth::id()) {
-            return redirect()->route('transaction')->with('error', 'Unauthorized action.');
-        }
-
-        $borrowedBook->update([
-            'status' => 'returned',
-            'returned_at' => now(),
-        ]);
-
-        $book = $borrowedBook->book;
-        $book->is_borrowed = false;
-        $book->save();
-
-        return redirect()->route('transaction')->with('success', 'Book returned successfully.');
+        return redirect()->back()->with('success', 'Book borrowed successfully. Due date: ' . now()->addDays(14)->format('Y-m-d'));
     }
 }

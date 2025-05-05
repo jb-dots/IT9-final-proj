@@ -13,8 +13,7 @@ class CreateBooksTable extends Migration
             $table->string('title');
             $table->string('author')->nullable();
             $table->string('cover_image');
-            $table->foreignId('genre_id')->constrained('genres')->onDelete('cascade');
-            $table->boolean('is_available')->default(false); 
+            $table->foreignId('genre_id')->constrained('genres')->onDelete('cascade'); // Changed from genres_id
             $table->timestamps();
         });
     }

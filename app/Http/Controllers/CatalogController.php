@@ -22,6 +22,20 @@ class CatalogController extends Controller
         return view('catalogs', compact('genres'));
     }
 
+    public function selection(Request $request)
+    {
+        $search = $request->input('search');
+
+        $genres = Genre::query()
+            ->when($search, function ($query, $search) {
+                return $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy('name', 'asc')
+            ->paginate(18);
+
+        return view('catalogs', compact('genres'));
+    }
+
     public function show(Request $request, Genre $genre)
     {
         $search = $request->input('search');

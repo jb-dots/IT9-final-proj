@@ -25,7 +25,7 @@ class AdminController extends Controller
         $books = Book::with('genre')->get();
 
         // Fetch all genres
-        $genres = Genre::all();
+        $genres = \App\Models\Genre::orderBy('name')->get();
 
         // Fetch borrowed books with user information
         $borrowedBooks = BorrowedBook::with(['book', 'user'])
@@ -176,47 +176,104 @@ class AdminController extends Controller
     }
     public function adjustStock(Book $book)
     {
+        $stockIns = \App\Models\StockIn::where('book_id', $book->id)
+            ->with('supplier')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $stockOuts = \App\Models\StockOut::where('book_id', $book->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         $suppliers = \App\Models\Supplier::orderBy('name')->get();
-        return view('admin.adjust-stock', compact('book', 'suppliers'));
+
+        return view('admin.adjust-stock', compact('book', 'stockIns', 'stockOuts', 'suppliers'));
     }
 
-    public function updateStock(Request $request, Book $book)
+    public function stockIn(Request $request, Book $book)
     {
         try {
             $request->validate([
-                'quantity_change' => 'required|integer',
-                'action' => 'required|in:stock_in,stock_out',
                 'supplier_id' => 'required|exists:suppliers,id',
+                'quantity' => 'required|integer|min:1',
             ]);
 
-            $quantityChange = $request->quantity_change;
-            $action = $request->action;
-            $supplierId = $request->supplier_id;
+            $quantity = $request->input('quantity');
+            $supplierId = $request->input('supplier_id');
 
-            if ($action === 'stock_in') {
-                $book->quantity += $quantityChange;
-            } elseif ($action === 'stock_out') {
-                $newQuantity = $book->quantity - $quantityChange;
-                if ($newQuantity < 0) {
-                    return redirect()->back()->with('error', 'Cannot stock out more books than available.');
-                }
-                $book->quantity = $newQuantity;
-            }
-
+            $book->quantity += $quantity;
             $book->save();
 
-            // Record stock history
-            \App\Models\StockHistory::create([
+            $userName = auth()->user() ? auth()->user()->name : 'Unknown';
+
+            \App\Models\StockIn::create([
                 'book_id' => $book->id,
-                'quantity_change' => $quantityChange,
-                'action' => $action,
-                'performed_by' => $request->user()->email ?? 'unknown',
                 'supplier_id' => $supplierId,
+                'quantity' => $quantity,
+                'performed_by' => $userName,
             ]);
 
-            return redirect()->route('admin.index')->with('success', 'Book stock updated successfully.');
+            return redirect()->route('admin.adjustStock', $book)->with('success', 'Stock in recorded successfully.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update stock: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to record stock in: ' . $e->getMessage());
         }
+    }
+
+    public function stockOut(Request $request, Book $book)
+    {
+        try {
+            $request->validate([
+                'quantity' => 'required|integer|min:1',
+            ]);
+
+            $quantity = $request->input('quantity');
+
+            if ($quantity > $book->quantity) {
+                return redirect()->back()->with('error', 'Cannot stock out more books than available.');
+            }
+
+            $book->quantity -= $quantity;
+            $book->save();
+
+            $userName = auth()->user() ? auth()->user()->name : 'Unknown';
+
+            \App\Models\StockOut::create([
+                'book_id' => $book->id,
+                'quantity' => $quantity,
+                'performed_by' => $userName,
+            ]);
+
+            return redirect()->route('admin.adjustStock', $book)->with('success', 'Stock out recorded successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to record stock out: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show the form to create a new supplier.
+     */
+    public function createSupplier()
+    {
+        return view('admin.add-supplier');
+    }
+
+    /**
+     * Store a new supplier in the database.
+     */
+    public function storeSupplier(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|unique:suppliers,name|max:255',
+            'address' => 'nullable|string|max:255',
+            'contact_number' => 'nullable|string|max:50',
+        ]);
+
+        \App\Models\Supplier::create([
+            'name' => $request->input('name'),
+            'address' => $request->input('address'),
+            'contact_number' => $request->input('contact_number'),
+        ]);
+
+        return redirect()->route('admin.suppliers.create')->with('success', 'Supplier added successfully.');
     }
 }
