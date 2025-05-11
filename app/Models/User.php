@@ -57,7 +57,9 @@ class User extends Authenticatable
         return $this->hasMany(BorrowedBook::class);
     }
     
-    // app/Models/User.php
+    /**
+     * Get the transactions for the user.
+     */
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
@@ -73,6 +75,9 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /**
+     * Get the ratings for the user.
+     */
     public function ratings()
     {
         return $this->hasMany(Rating::class);
@@ -91,5 +96,10 @@ class User extends Authenticatable
                 $user->membership_id = 'GA-' . str_pad($nextId, 6, '0', STR_PAD_LEFT);
             }
         });
+    }
+
+    public function favorites()
+    {
+        return $this->belongsToMany(\App\Models\Book::class, 'user_favorites')->withTimestamps();
     }
 }

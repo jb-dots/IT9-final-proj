@@ -7,6 +7,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\GenreController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -38,7 +39,10 @@ Route::middleware('auth')->group(function () {
 
     // Favorites routes
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites');
-    Route::post('/books/{book}/favorites', [BookController::class, 'addToFavorites'])->name('favorites.add');
+    Route::post('/books/{book}/favorites', [BookController::class, 'toggleFavorite'])->name('favorites.toggle');
+
+    // Toggle borrow route
+    Route::post('/books/{book}/toggle-borrow', [BookController::class, 'toggleBorrow'])->name('books.toggleBorrow');
 
     // Transaction route
     Route::get('/transaction', [TransactionController::class, 'index'])->name('transaction');
@@ -49,42 +53,36 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Admin routes
+    // Admin routes (consolidated)
     Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [AdminController::class, 'index'])->name('admin.index');
         Route::get('/create', [AdminController::class, 'create'])->name('admin.create');
         Route::post('/store', [AdminController::class, 'store'])->name('admin.store');
         Route::get('/edit/{book}', [AdminController::class, 'edit'])->name('admin.edit');
         Route::put('/update/{book}', [AdminController::class, 'update'])->name('admin.update');
-        Route::put('/borrow-status/{borrowedBook}', [AdminController::class, 'updateBorrowStatus'])->name('admin.updateBorrowStatus');
+Route::match(['post', 'put'], '/borrow-status/{borrowedBook}', [AdminController::class, 'updateBorrowStatus'])->name('admin.updateBorrowStatus');
         Route::post('/mark-as-paid/{borrowedBook}', [AdminController::class, 'markAsPaid'])->name('admin.markAsPaid');
         Route::get('/adjust-stock/{book}', [AdminController::class, 'adjustStock'])->name('admin.adjustStock');
-        Route::post('/stock-in/{book}', [AdminController::class, 'stockIn'])->name('admin.stockIn');
-        Route::post('/stock-out/{book}', [AdminController::class, 'stockOut'])->name('admin.stockOut');
         Route::post('/update-stock/{book}', [AdminController::class, 'updateStock'])->name('admin.updateStock');
-
-        // Supplier routes
-        Route::get('/suppliers/create', [AdminController::class, 'createSupplier'])->name('admin.suppliers.create');
-        Route::post('/suppliers', [AdminController::class, 'storeSupplier'])->name('admin.suppliers.store');
-    });
-
-    // Additional admin book routes
-    Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
+    
         Route::get('/books', [BookController::class, 'adminIndex'])->name('admin.books.index');
         Route::get('/books/create', [BookController::class, 'create'])->name('admin.books.create');
         Route::post('/books', [BookController::class, 'store'])->name('admin.books.store');
         Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('admin.books.edit');
         Route::put('/books/{book}', [BookController::class, 'update'])->name('admin.books.update');
         Route::patch('/books/{book}/toggle', [BookController::class, 'toggleStatus'])->name('admin.books.toggle');
+    
+        Route::get('/genres/create', [GenreController::class, 'create'])->name('admin.genres.create');
+        Route::post('/genres/store', [GenreController::class, 'store'])->name('admin.genres.store');
+        Route::get('/genres/{genre}/edit', [GenreController::class, 'edit'])->name('admin.genres.edit');
+        Route::put('/genres/{genre}', [GenreController::class, 'update'])->name('admin.genres.update');
+        Route::delete('/genres/{genre}', [GenreController::class, 'destroy'])->name('admin.genres.destroy');
 
-        // Admin genre routes
-        Route::get('/genres/create', [\App\Http\Controllers\Admin\GenreController::class, 'create'])->name('admin.genres.create');
-        Route::post('/genres', [\App\Http\Controllers\Admin\GenreController::class, 'store'])->name('admin.genres.store');
-        Route::get('/genres/{genre}/edit', [\App\Http\Controllers\Admin\GenreController::class, 'edit'])->name('admin.genres.edit');
-        Route::put('/genres/{genre}', [\App\Http\Controllers\Admin\GenreController::class, 'update'])->name('admin.genres.update');
-        Route::delete('/genres/{genre}', [\App\Http\Controllers\Admin\GenreController::class, 'destroy'])->name('admin.genres.destroy');
+        // Supplier routes
+        Route::get('/suppliers/create', [\App\Http\Controllers\Admin\SupplierController::class, 'create'])->name('admin.suppliers.create');
+        Route::post('/suppliers', [\App\Http\Controllers\Admin\SupplierController::class, 'store'])->name('admin.suppliers.store');
     });
-
+    
     // Dashboard borrow route
     Route::post('/dashboard/borrow/{book}', [DashboardController::class, 'borrow'])->name('dashboard.borrow');
 });

@@ -6,11 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Book extends Model
 {
-protected $fillable = ['title', 'author', 'cover_image', 'genre_id', 'quantity', 'publisher', 'description'];
+    protected $fillable = ['title', 'author', 'cover_image', 'quantity', 'publisher', 'description', 'special_book_id'];
 
-    public function genre()
+    protected static function boot()
     {
-        return $this->belongsTo(Genre::class, 'genre_id');
+        parent::boot();
+
+        static::created(function ($book) {
+            if (!$book->special_book_id) {
+                $book->special_book_id = 'GAB-' . str_pad($book->id, 5, '0', STR_PAD_LEFT);
+                $book->save();
+            }
+        });
+    }
+
+    public function genres()
+    {
+        return $this->belongsToMany(Genre::class, 'book_genre');
     }
 
     public function borrowedBooks()
@@ -21,5 +33,10 @@ protected $fillable = ['title', 'author', 'cover_image', 'genre_id', 'quantity',
     public function ratings()
     {
         return $this->hasMany(Rating::class);
+    }
+
+    public function stockHistories()
+    {
+        return $this->hasMany(StockHistory::class);
     }
 }

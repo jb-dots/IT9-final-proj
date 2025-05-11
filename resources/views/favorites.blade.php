@@ -277,12 +277,14 @@
             </div>
             <div class="favorites-content">
                 <div class="book-grid">
-                    @foreach($favorites as $book)
-                        <div class="book-card">
-                            <img src="{{ asset('images/' . $book->image) }}" alt="{{ $book->title }}">
-                            <p>{{ $book->title }}</p>
-                        </div>
-                    @endforeach
+@foreach($favorites as $book)
+    <div class="book-card" style="position: relative;">
+        <a href="{{ route('books.show', $book->id) }}" style="color: inherit; text-decoration: none;">
+            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+            <p>{{ $book->title }}</p>
+        </a>
+    </div>
+@endforeach
                     <!-- Placeholder for when there are no favorites -->
                     @if($favorites->isEmpty())
                         <p style="text-align: center; color: #121246; grid-column: 1 / -1;">No favorite books yet.</p>

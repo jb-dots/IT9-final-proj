@@ -1,9 +1,8 @@
-<!-- resources/views/dashboard.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Grand Archives</title>
@@ -95,7 +94,7 @@
             left: 0;
             top: 0;
             border-bottom: 2px solid #b5835a;
-            z-index: 1;
+            z-index: 15; /* Increased to stay above book cards */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -158,6 +157,7 @@
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
             padding: 20px;
+            margin-top: 80px; /* Ensure content starts below fixed header */
         }
 
         .book-card {
@@ -169,6 +169,7 @@
             overflow: hidden;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             position: relative;
+            z-index: 5; /* Lower than rectangle-5 */
         }
 
         .book-card:hover {
@@ -258,6 +259,25 @@
             font-weight: bold;
         }
 
+        /* Bookmark icon styles */
+        .bookmark-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 10;
+            transition: color 0.2s ease;
+        }
+
+        .bookmark-icon.favorited {
+            color: #b5835a; /* Filled color for favorited */
+        }
+
+        .bookmark-icon:not(.favorited) {
+            color: #d4a373; /* Hollow color for non-favorited */
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .home-page {
@@ -300,6 +320,10 @@
                 padding: 8px;
                 font-size: 14px;
             }
+
+            .bookmark-icon {
+                font-size: 20px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -320,6 +344,18 @@
                 padding: 6px;
                 font-size: 12px;
             }
+
+            .bookmark-icon {
+                font-size: 18px;
+            }
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24;
         }
     </style>
 </head>
@@ -371,6 +407,12 @@
             <div class="book-container">
 @forelse($books as $book)
     <div class="book-card">
+        <form action="{{ route('favorites.toggle', $book) }}" method="POST" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+            @csrf
+            <button type="submit" class="bookmark-icon {{ auth()->user() && auth()->user()->favorites->contains($book->id) ? 'favorited' : '' }}" style="background: none; border: none; padding: 0; cursor: pointer;" title="Toggle favorite">
+                <i class="{{ auth()->user() && auth()->user()->favorites->contains($book->id) ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark' }}"></i>
+            </button>
+        </form>
         <a href="{{ route('books.show', $book->id) }}">
             <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
         </a>
@@ -392,14 +434,14 @@
                 <span style="color: #121246; font-size: 14px; margin-left: 8px;">({{ number_format($book->average_rating, 2) }}/5)</span>
             </div>
             <div class="quantity">Available: {{ $book->quantity }}</div>
-                @if($book->quantity > 0)
-                    <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
-                        @csrf
-                    </form>
-                @else
-                    <span class="out-of-stock">Out of Stock</span>
-                @endif
-            </div>
+            @if($book->quantity > 0)
+                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                    @csrf
+                </form>
+            @else
+                <span class="out-of-stock">Out of Stock</span>
+            @endif
+        </div>
     </div>
 @empty
     <p style="color: #121246; padding: 20px;">No trending books available.</p>
@@ -411,6 +453,12 @@
             <div class="book-container">
 @forelse($topBooks as $book)
     <div class="book-card">
+        <form action="{{ route('favorites.toggle', $book) }}" method="POST" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+            @csrf
+            <button type="submit" class="bookmark-icon {{ auth()->user() && auth()->user()->favorites->contains($book->id) ? 'favorited' : '' }}" style="background: none; border: none; padding: 0; cursor: pointer;" title="Toggle favorite">
+                <i class="{{ auth()->user() && auth()->user()->favorites->contains($book->id) ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark' }}"></i>
+            </button>
+        </form>
         <a href="{{ route('books.show', $book->id) }}">
             <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
         </a>
@@ -432,14 +480,14 @@
                 <span style="color: #121246; font-size: 14px; margin-left: 8px;">({{ number_format($book->average_rating, 2) }}/5)</span>
             </div>
             <div class="quantity">Available: {{ $book->quantity }}</div>
-                @if($book->quantity > 0)
-                    <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
-                        @csrf
-                        </form>
-                @else
-                    <span class="out-of-stock">Out of Stock</span>
-                @endif
-            </div>
+            @if($book->quantity > 0)
+                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                    @csrf
+                </form>
+            @else
+                <span class="out-of-stock">Out of Stock</span>
+            @endif
+        </div>
     </div>
 @empty
     <p style="color: #121246; padding: 20px;">No top books available.</p>
@@ -451,76 +499,45 @@
             <div class="book-container">
 @forelse($mostReadBooks as $book)
     <div class="book-card">
+        <form action="{{ route('favorites.toggle', $book) }}" method="POST" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
+            @csrf
+            <button type="submit" class="bookmark-icon {{ auth()->user() && auth()->user()->favorites->contains($book->id) ? 'favorited' : '' }}" style="background: none; border: none; padding: 0; cursor: pointer;" title="Toggle favorite">
+                <i class="{{ auth()->user() && auth()->user()->favorites->contains($book->id) ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark' }}"></i>
+            </button>
+        </form>
         <a href="{{ route('books.show', $book->id) }}">
             <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
         </a>
-            <div class="book-info">
-                <a href="{{ route('books.show', $book->id) }}">
-                    <p>{{ $book->title }}</p>
-                </a>
-                <div style="display: flex; align-items: center; gap: 5px; color: #ffca08; font-size: 18px; margin-bottom: 5px;">
-                    @php
-                        $roundedRating = round($book->average_rating);
-                    @endphp
-                    @for ($i = 1; $i <= 5; $i++)
-                        @if ($i <= $roundedRating)
-                            <span class="fa fa-star checked"></span>
-                        @else
-                            <span class="fa fa-star"></span>
-                        @endif
-                    @endfor
-                    <span style="color: #121246; font-size: 14px; margin-left: 8px;">({{ number_format($book->average_rating, 2) }}/5)</span>
-                </div>
-                <div class="quantity">Available: {{ $book->quantity }}</div>
-                @if($book->quantity > 0)
-                @else
-                    <span class="out-of-stock">Out of Stock</span>
-                @endif
+        <div class="book-info">
+            <a href="{{ route('books.show', $book->id) }}">
+                <p>{{ $book->title }}</p>
+            </a>
+            <div style="display: flex; align-items: center; gap: 5px; color: #ffca08; font-size: 18px; margin-bottom: 5px;">
+                @php
+                    $roundedRating = round($book->average_rating);
+                @endphp
+                @for ($i = 1; $i <= 5; $i++)
+                    @if ($i <= $roundedRating)
+                        <span class="fa fa-star checked"></span>
+                    @else
+                        <span class="fa fa-star"></span>
+                    @endif
+                @endfor
+                <span style="color: #121246; font-size: 14px; margin-left: 8px;">({{ number_format($book->average_rating, 2) }}/5)</span>
             </div>
+            <div class="quantity">Available: {{ $book->quantity }}</div>
+            @if($book->quantity > 0)
+                <form action="{{ route('dashboard.borrow', $book) }}" method="POST" style="display:inline;">
+                    @csrf
+                </form>
+            @else
+                <span class="out-of-stock">Out of Stock</span>
+            @endif
+        </div>
     </div>
 @empty
     <p style="color: #121246; padding: 20px;">No most read books available.</p>
 @endforelse
-            </div>
-
-            <!-- Borrowed Books -->
-            <div class="borrowed-books">Your Borrowed Books</div>
-            <div class="borrowed-table">
-                @if($borrowedBooks->isEmpty())
-                    <p style="color: #121246; text-align: center; padding: 20px;">You have not borrowed any books yet.</p>
-                @else
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Book Title</th>
-                                <th>Due Date</th>
-                                <th>Status</th>
-                                <th>Late Fee</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($borrowedBooks as $borrowedBook)
-                                <tr>
-                                    <td>{{ $borrowedBook->book->title }}</td>
-                                    <td>
-                                        {{ $borrowedBook->due_date->format('Y-m-d') }}
-                                        @if($borrowedBook->due_date->isPast() && !$borrowedBook->returned_at)
-                                            <span class="overdue">(Overdue)</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ ucfirst($borrowedBook->status) }}</td>
-                                    <td>
-                                        @if($borrowedBook->late_fee > 0)
-                                            ${{ number_format($borrowedBook->late_fee, 2) }}
-                                        @else
-                                            $0.00
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endif
             </div>
         </div>
     </div>
@@ -533,6 +550,71 @@
             menuButton.addEventListener('click', function() {
                 navigation.classList.toggle('active');
                 homePage.classList.toggle('nav-active');
+            });
+
+            // Reusable function to toggle favorite via AJAX and update UI
+            function toggleFavoriteAJAX(form, button, icon) {
+                const url = form.action;
+                const token = form.querySelector('input[name="_token"]').value;
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.favorited) {
+                        icon.classList.remove('fa-regular');
+                        icon.classList.add('fa-solid');
+                        button.classList.add('favorited');
+                    } else {
+                        icon.classList.remove('fa-solid');
+                        icon.classList.add('fa-regular');
+                        button.classList.remove('favorited');
+                    }
+                    // Store favorite status in localStorage for synchronization
+                    localStorage.setItem('favorite_' + form.action, JSON.stringify(data.favorited));
+                })
+                .catch(error => {
+                    console.error('Error toggling favorite:', error);
+                    alert('Failed to toggle favorite. Please try again.');
+                });
+            }
+
+            // Attach event listeners to favorite forms
+            document.querySelectorAll('form[action*="/favorites"]').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const button = form.querySelector('button.bookmark-icon');
+                    const icon = button.querySelector('i');
+                    toggleFavoriteAJAX(form, button, icon);
+                });
+            });
+
+            // On page load, synchronize favorite icons based on localStorage
+            document.querySelectorAll('form[action*="/favorites"]').forEach(form => {
+                const button = form.querySelector('button.bookmark-icon');
+                const icon = button.querySelector('i');
+                const stored = localStorage.getItem('favorite_' + form.action);
+                if (stored !== null) {
+                    const favorited = JSON.parse(stored);
+                    if (favorited) {
+                        icon.classList.remove('fa-regular');
+                        icon.classList.add('fa-solid');
+                        button.classList.add('favorited');
+                    } else {
+                        icon.classList.remove('fa-solid');
+                        icon.classList.add('fa-regular');
+                        button.classList.remove('favorited');
+                    }
+                    // Clear the stored value after applying
+                    localStorage.removeItem('favorite_' + form.action);
+                }
             });
         });
     </script>

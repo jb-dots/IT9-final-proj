@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adjust Stock - Grand Archives</title>
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,6 +13,10 @@
             margin: 0;
             padding: 20px;
         }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
         .header {
             background: #ded9c3;
             padding: 20px;
@@ -19,13 +24,13 @@
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 20px;
+            border-radius: 8px;
         }
-        .form-container {
+        .card {
             background: #ded9c3;
             padding: 20px;
             border-radius: 8px;
-            max-width: 500px;
-            margin: 0 auto 40px auto;
+            margin-bottom: 20px;
         }
         .form-group {
             margin-bottom: 15px;
@@ -33,25 +38,41 @@
         .form-group label {
             display: block;
             margin-bottom: 5px;
+            color: #121246;
         }
         .form-group input, .form-group select {
             width: 100%;
             padding: 8px;
             border: 1px solid #b5835a;
             border-radius: 4px;
+            box-sizing: border-box;
         }
-        .button {
-            background: #b5835a;
+        .button, .cancel-button {
             padding: 10px 20px;
             border: none;
             cursor: pointer;
             color: #fff;
             border-radius: 4px;
+            text-align: center;
+            display: inline-block;
+        }
+        .button {
+            background: #b5835a;
+        }
+        .button:hover {
+            background: #a3724e;
+        }
+        .cancel-button {
+            background: #666;
+        }
+        .cancel-button:hover {
+            background: #555;
         }
         .message {
             text-align: center;
             padding: 10px;
             margin-bottom: 20px;
+            border-radius: 4px;
         }
         .message.success {
             background: #6aa933;
@@ -61,131 +82,116 @@
             background: #ff3333;
             color: #fff;
         }
-        .history-section {
-            max-width: 900px;
-            margin: 0 auto 40px auto;
-            background: #ded9c3;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        .history-section h2 {
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        table {
+        .table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 10px;
         }
-        th, td {
+        .table th, .table td {
             border: 1px solid #b5835a;
             padding: 8px;
             text-align: left;
+            vertical-align: middle;
         }
-        th {
-            background-color: #b5835a;
-            color: white;
+        .table th {
+            background: #b5835a;
+            color: #fff;
+        }
+        .table tbody tr:nth-child(even) {
+            background: #f5f0e1;
         }
     </style>
 </head>
 <body>
-    <div class="header">Adjust Stock for {{ $book->title }}</div>
+    <div class="container">
+        <div class="header">Adjust Stock for {{ $book->title }}</div>
 
-    <div style="text-align: center; margin-bottom: 20px;">
-        <a href="{{ route('admin.index') }}" class="button" style="background: #6aa933; padding: 10px 20px; color: white; border-radius: 4px; text-decoration: none;">Back to Dashboard</a>
-    </div>
-
-    @if(session('success'))
-        <div class="message success">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="message error">{{ session('error') }}</div>
-    @endif
-
-    <div class="form-container">
-        <h2>Stock In (Add Copies)</h2>
-        <form action="{{ route('admin.stockIn', $book) }}" method="POST">
-            @csrf
-            <div class="form-group">
-                <label for="supplier_id">Supplier:</label>
-                <select name="supplier_id" id="supplier_id" required>
-                    <option value="">Select Supplier</option>
-                    @foreach($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="quantity_in">Quantity:</label>
-                <input type="number" name="quantity" id="quantity_in" value="1" min="1" required />
-            </div>
-            <button type="submit" class="button">Add Stock</button>
-        </form>
-    </div>
-
-    <div class="form-container">
-        <h2>Stock Out (Remove Copies)</h2>
-        <form action="{{ route('admin.stockOut', $book) }}" method="POST">
-            @csrf
-            <div class="form-group">
-                <label for="quantity_out">Quantity:</label>
-                <input type="number" name="quantity" id="quantity_out" value="1" min="1" required />
-            </div>
-            <button type="submit" class="button">Remove Stock</button>
-        </form>
-    </div>
-
-    <div class="history-section">
-        <h2>Stock In History</h2>
-        @if($stockIns->isEmpty())
-            <p>No stock in history available.</p>
-        @else
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Supplier</th>
-                        <th>Quantity</th>
-                        <th>Performed By</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($stockIns as $stockIn)
-                        <tr>
-                            <td>{{ $stockIn->created_at->format('Y-m-d H:i') }}</td>
-                            <td>{{ $stockIn->supplier->name ?? 'N/A' }}</td>
-                            <td>{{ $stockIn->quantity }}</td>
-                            <td>{{ $stockIn->performed_by }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <!-- Success/Error Messages -->
+        @if (session('success'))
+            <div class="message success">{{ session('success') }}</div>
         @endif
-    </div>
-
-    <div class="history-section">
-        <h2>Stock Out History</h2>
-        @if($stockOuts->isEmpty())
-            <p>No stock out history available.</p>
-        @else
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Quantity</th>
-                        <th>Performed By</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($stockOuts as $stockOut)
-                        <tr>
-                            <td>{{ $stockOut->created_at->format('Y-m-d H:i') }}</td>
-                            <td>{{ $stockOut->quantity }}</td>
-                            <td>{{ $stockOut->performed_by }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        @if (session('error'))
+            <div class="message error">{{ session('error') }}</div>
         @endif
+
+        <!-- Current Stock -->
+        <div class="card">
+            <h2 class="text-2xl font-semibold mb-4">Current Stock</h2>
+            <p class="text-gray-600">Current Quantity: {{ $book->quantity }}</p>
+        </div>
+
+        <!-- Adjust Stock Form -->
+        <div class="card">
+            <h2 class="text-2xl font-semibold mb-4">Adjust Stock</h2>
+            <form action="{{ route('admin.updateStock', $book) }}" method="POST">
+                @csrf
+                <div class="form-group">
+                    <label for="quantity_change">Quantity to Adjust:</label>
+                    <input type="number" name="quantity_change" id="quantity_change" value="1" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="action">Action:</label>
+                    <select name="action" id="action" required>
+                        <option value="stock_in">Stock In (Add Copies)</option>
+                        <option value="stock_out">Stock Out (Remove Copies)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="supplier-group" style="display:none;">
+                    <label for="supplier_id">Supplier:</label>
+                    <select name="supplier_id" id="supplier_id">
+                        <option value="">Select Supplier</option>
+                        @foreach($suppliers as $supplier)
+                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="button">Update Stock</button>
+                <a href="{{ route('admin.index') }}" class="cancel-button">Cancel</a>
+            </form>
+            <script>
+                document.getElementById('action').addEventListener('change', function() {
+                    var supplierGroup = document.getElementById('supplier-group');
+                    if (this.value === 'stock_in') {
+                        supplierGroup.style.display = 'block';
+                        document.getElementById('supplier_id').setAttribute('required', 'required');
+                    } else {
+                        supplierGroup.style.display = 'none';
+                        document.getElementById('supplier_id').removeAttribute('required');
+                    }
+                });
+                // Trigger change event on page load to set initial state
+                document.getElementById('action').dispatchEvent(new Event('change'));
+            </script>
+        </div>
+
+        <!-- Stock History -->
+        <div class="card">
+            <h2 class="text-2xl font-semibold mb-4">Stock History</h2>
+            @if ($stockHistories->isEmpty())
+                <p class="text-gray-600">No stock history available for this book.</p>
+            @else
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Action</th>
+                            <th>Quantity Change</th>
+                            <th>Performed By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($stockHistories as $history)
+                            <tr>
+                                <td>{{ $history->created_at->format('Y-m-d H:i:s') }}</td>
+                                <td>{{ ucfirst(str_replace('_', ' ', $history->action)) }}</td>
+                                <td>{{ $history->quantity_change > 0 ? '+' : '' }}{{ $history->quantity_change }}</td>
+                                <td>{{ $history->performed_by }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        </div>
     </div>
 </body>
 </html>

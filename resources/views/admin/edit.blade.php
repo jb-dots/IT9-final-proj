@@ -1,4 +1,3 @@
-<!-- resources/views/admin/edit.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,7 +47,8 @@
         }
 
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             width: 100%;
             padding: 8px;
             border-radius: 4px;
@@ -105,13 +105,32 @@
             font-size: 14px;
             margin-top: 5px;
         }
+
+        .genre-checkboxes {
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 8px;
+            background: #d9d9d9;
+            border-radius: 4px;
+        }
+
+        .genre-checkboxes label {
+            display: block;
+            padding: 4px 0;
+            color: #121246;
+            cursor: pointer;
+        }
+
+        .genre-checkboxes input[type="checkbox"] {
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="form-container">
         <a href="{{ route('admin.index') }}" class="back-btn">Back to Dashboard</a>
         <h2>Edit Book</h2>
-<form action="{{ route('admin.books.update', $book) }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.books.update', $book) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="form-group">
@@ -154,15 +173,16 @@
                 @enderror
             </div>
             <div class="form-group">
-                <label for="genre_id">Genre</label>
-                <select name="genre_id" id="genre_id">
+                <label for="genres">Genres</label>
+                <div class="genre-checkboxes">
                     @foreach ($genres as $genre)
-                        <option value="{{ $genre->id }}" {{ old('genre_id', $book->genre_id) == $genre->id ? 'selected' : '' }}>
+                        <label>
+                            <input type="checkbox" name="genre_ids[]" value="{{ $genre->id }}" {{ (collect(old('genre_ids', $book->genres->pluck('id')))->contains($genre->id)) ? 'checked' : '' }}>
                             {{ $genre->name }}
-                        </option>
+                        </label>
                     @endforeach
-                </select>
-                @error('genre_id')
+                </div>
+                @error('genre_ids')
                     <div class="error">{{ $message }}</div>
                 @enderror
             </div>

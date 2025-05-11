@@ -17,14 +17,31 @@ class BookController extends Controller
 
     public function index()
     {
+        $user = Auth::user();
         $books = Book::all();
+
+        if ($user) {
+            $favoriteBookIds = $user->favorites()->pluck('book_id')->toArray();
+            // Annotate each book with isFavorited property
+            $books->map(function ($book) use ($favoriteBookIds) {
+                $book->isFavorited = in_array($book->id, $favoriteBookIds);
+                return $book;
+            });
+        } else {
+            // If no user, set isFavorited false for all books
+            $books->map(function ($book) {
+                $book->isFavorited = false;
+                return $book;
+            });
+        }
+
         return view('dashboard', compact('books'));
     }
 
     // Updated show method to display a single book's description
     public function show($id)
     {
-        $book = Book::with('ratings')->findOrFail($id);
+        $book = Book::with(['ratings', 'genres'])->findOrFail($id);
         $averageRating = $book->ratings()->avg('rating');
         return view('books.description', compact('book', 'averageRating')); // Points to description.blade.php
     }
@@ -80,7 +97,8 @@ class BookController extends Controller
             'publisher' => 'required|string|max:255',
             'description' => 'nullable|string',
             'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'genre_id' => 'required|exists:genres,id',
+            'genre_ids' => 'required|array',
+            'genre_ids.*' => 'exists:genres,id',
         ]);
 
         $book = new Book();
@@ -88,13 +106,18 @@ class BookController extends Controller
         $book->author = $request->author;
         $book->publisher = $request->publisher;
         $book->description = $request->description;
-        $book->genre_id = $request->genre_id;
 
         if ($request->hasFile('cover_image')) {
             $book->cover_image = $request->file('cover_image')->store('covers', 'public');
         }
 
         $book->save();
+
+        // Generate special_book_id using the saved book's id
+        $book->special_book_id = 'GAB-' . str_pad($book->id, 5, '0', STR_PAD_LEFT);
+        $book->save();
+
+        $book->genres()->sync($request->genre_ids);
 
         return redirect()->route('admin.books.index')->with('success', 'Book added successfully.');
     }
@@ -113,7 +136,8 @@ class BookController extends Controller
             'publisher' => 'required|string|max:255',
             'description' => 'nullable|string',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'genre_id' => 'required|exists:genres,id',
+            'genre_ids' => 'required|array',
+            'genre_ids.*' => 'exists:genres,id',
             'is_borrowed' => 'boolean',
         ]);
 
@@ -121,7 +145,6 @@ class BookController extends Controller
         $book->author = $request->author;
         $book->publisher = $request->publisher;
         $book->description = $request->description;
-        $book->genre_id = $request->genre_id;
         $book->is_borrowed = $request->boolean('is_borrowed', $book->is_borrowed);
 
         if ($request->hasFile('cover_image')) {
@@ -129,6 +152,8 @@ class BookController extends Controller
         }
 
         $book->save();
+
+        $book->genres()->sync($request->genre_ids);
 
         return redirect()->route('admin.books.index')->with('success', 'Book updated successfully.');
     }
@@ -148,7 +173,7 @@ class BookController extends Controller
 
     public function adminIndex()
     {
-        $books = Book::with('genre')->get();
+        $books = Book::with('genres')->get();
         return view('admin.books.index', compact('books'));
     }
 
@@ -167,7 +192,7 @@ class BookController extends Controller
 
         // Check if the book quantity is available
         if ($book->quantity <= 0) {
-            return redirect()->back()->with('error', 'This book is currently not available for borrowing.');
+            return redirect()->back()->with('error', 'This book is currently out of stock.');
         }
 
         // Create a new borrowing record
@@ -179,11 +204,79 @@ class BookController extends Controller
             'due_date' => now()->addDays(14),
         ]);
 
-        // Decrement the book quantity by 1 and save
+        // Decrement the book quantity and save
         $book->quantity -= 1;
-        $book->is_borrowed = true;
         $book->save();
 
         return redirect()->back()->with('success', 'Book borrowed successfully. Due date: ' . now()->addDays(14)->format('Y-m-d'));
+    }
+
+    public function toggleFavorite(Request $request, Book $book)
+    {
+        $user = $request->user();
+        if ($user->favorites()->where('book_id', $book->id)->exists()) {
+            $user->favorites()->detach($book->id);
+            $favorited = false;
+        } else {
+            $user->favorites()->attach($book->id);
+            $favorited = true;
+        }
+
+        return response()->json(['favorited' => $favorited]);
+    }
+
+    public function toggleBorrow(Request $request, Book $book)
+    {
+        $user = $request->user();
+
+        $existingBorrow = $user->borrowedBooks()
+            ->where('book_id', $book->id)
+            ->where('status', 'borrowed')
+            ->whereNull('returned_at')
+            ->first();
+
+        if ($existingBorrow) {
+            // Mark as returned
+            $existingBorrow->returned_at = now();
+            $existingBorrow->status = 'returned';
+            $existingBorrow->save();
+
+            // Increment book quantity and save
+            $book->quantity += 1;
+            $book->save();
+
+            $borrowed = false;
+        } else {
+            // Check if book is available (not borrowed by others)
+            $isBorrowedByOthers = \App\Models\BorrowedBook::where('book_id', $book->id)
+                ->where('status', 'borrowed')
+                ->whereNull('returned_at')
+                ->exists();
+
+            if ($isBorrowedByOthers) {
+                return response()->json(['error' => 'Book is currently borrowed by another user.'], 403);
+            }
+
+            // Check if the book quantity is available
+            if ($book->quantity <= 0) {
+                return response()->json(['error' => 'This book is currently out of stock.'], 403);
+            }
+
+            // Create new borrow record
+            $user->borrowedBooks()->create([
+                'book_id' => $book->id,
+                'status' => 'borrowed',
+                'borrowed_at' => now(),
+                'due_date' => now()->addDays(14),
+            ]);
+
+            // Decrement book quantity and save
+            $book->quantity -= 1;
+            $book->save();
+
+            $borrowed = true;
+        }
+
+        return response()->json(['borrowed' => $borrowed]);
     }
 }

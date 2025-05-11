@@ -1,4 +1,3 @@
-<!-- resources/views/admin/index.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,6 +75,11 @@
             background: #ff3333;
             color: #fff;
         }
+        .note {
+            color: #ded9c3;
+            font-style: italic;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -88,114 +92,137 @@
         <div class="message error">{{ session('error') }}</div>
     @endif
 
-    <a href="{{ route('admin.create') }}"><button class="button">Add New Book</button></a>
-    <a href="{{ route('admin.suppliers.create') }}"><button class="button">Add New Supplier</button></a>
-
+    <!-- Book Inventory Section -->
     <div class="section">
-        <h2>Books</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Genre</th>
-                    <th>Quantity</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($books as $book)
+        <h2>Book Inventory</h2>
+        <a href="{{ route('admin.create') }}"><button class="button">Add New Book</button></a>
+        <a href="{{ route('admin.suppliers.create') }}"><button class="button">Add New Supplier</button></a>
+        @if($books->isEmpty())
+            <p class="note">No books available in the inventory.</p>
+        @else
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ $book->title }}</td>
-                        <td>{{ $book->author }}</td>
-                        <td>{{ $book->genre->name ?? 'N/A' }}</td>
-                        <td>{{ $book->quantity }}</td>
-                        <td>
-                            <a href="{{ route('admin.edit', $book) }}"><button class="action-button">Edit</button></a>
-                            <a href="{{ route('admin.adjustStock', $book) }}"><button class="action-button">Adjust Stock</button></a>
-                        </td>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Genre</th>
+                        <th>Quantity in Stock</th>
+                        <th>Actions</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach($books as $book)
+                        <tr>
+                            <td>{{ $book->title }}</td>
+                            <td>{{ $book->author ?? 'Unknown' }}</td>
+                            <td>
+                                @if($book->genres->isNotEmpty())
+                                    {{ $book->genres->pluck('name')->join(', ') }}
+                                @else
+                                    N/A
+                                @endif
+                            </td>
+                            <td>{{ $book->quantity }}</td>
+                            <td>
+                                <a href="{{ route('admin.edit', $book) }}"><button class="action-button">Edit</button></a>
+                                <a href="{{ route('admin.adjustStock', $book) }}"><button class="action-button">Adjust Stock</button></a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <p class="note">Click "Adjust Stock" to view stock history for a book.</p>
+        @endif
     </div>
 
+    <!-- Borrowed Books Section -->
     <div class="section">
         <h2>Borrowed Books</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Book Title</th>
-                    <th>User</th>
-                    <th>Contact No</th>
-                    <th>Address</th>
-                    <th>Status</th>
-                    <th>Borrowed At</th>
-                    <th>Due Date</th>
-                    <th>Returned At</th>
-                    <th>Late Fee</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($borrowedBooks as $borrowedBook)
+        @if($borrowedBooks->isEmpty())
+            <p class="note">No borrowed books at the moment.</p>
+        @else
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ $borrowedBook->book->title }}</td>
-                        <td>{{ $borrowedBook->user->name }}</td>
-                        <td>{{ $borrowedBook->user->contact_no ?? 'N/A' }}</td>
-                        <td>{{ $borrowedBook->user->address ?? 'N/A' }}</td>
-                        <td>{{ $borrowedBook->status }}</td>
-                        <td>{{ $borrowedBook->borrowed_at->format('Y-m-d H:i') }}</td>
-                        <td>{{ $borrowedBook->due_date->format('Y-m-d') }}</td>
-                        <td>{{ $borrowedBook->returned_at ? $borrowedBook->returned_at->format('Y-m-d H:i') : 'N/A' }}</td>
-                        <td>${{ number_format($borrowedBook->late_fee, 2) }}</td>
-                        <td>
-                            <form action="{{ route('admin.updateBorrowStatus', $borrowedBook) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('PUT')
-                                <select name="status" onchange="this.form.submit()">
-                                    <option value="borrowed" {{ $borrowedBook->status == 'borrowed' ? 'selected' : '' }}>Borrowed</option>
-                                    <option value="returned" {{ $borrowedBook->status == 'returned' ? 'selected' : '' }}>Returned</option>
-                                </select>
-                            </form>
-                            @if($borrowedBook->late_fee > 0 && $borrowedBook->status == 'borrowed')
-                                <form action="{{ route('admin.markAsPaid', $borrowedBook) }}" method="POST" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" class="paid-button">Mark as Paid</button>
-                                </form>
-                            @endif
-                        </td>
+                        <th>Book Title</th>
+                        <th>User</th>
+                        <th>Contact No</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Borrowed At</th>
+                        <th>Due Date</th>
+                        <th>Returned At</th>
+                        <th>Late Fee</th>
+                        <th>Actions</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach($borrowedBooks as $borrowedBook)
+                        <tr>
+                            <td>{{ $borrowedBook->book->title }}</td>
+                            <td>{{ $borrowedBook->user->name }}</td>
+                            <td>{{ $borrowedBook->user->contact_no ?? 'N/A' }}</td>
+                            <td>{{ $borrowedBook->user->address ?? 'N/A' }}</td>
+                            <td>{{ ucfirst($borrowedBook->status) }}</td>
+                            <td>{{ $borrowedBook->borrowed_at->format('Y-m-d H:i') }}</td>
+                            <td>{{ $borrowedBook->due_date->format('Y-m-d') }}</td>
+                            <td>{{ $borrowedBook->returned_at ? $borrowedBook->returned_at->format('Y-m-d H:i') : 'N/A' }}</td>
+                            <td>${{ number_format($borrowedBook->late_fee, 2) }}</td>
+                            <td>
+                                @if($borrowedBook->status === 'borrowed')
+                                    <form action="{{ route('admin.updateBorrowStatus', $borrowedBook) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        @method('POST')
+                                        <input type="hidden" name="status" value="returned">
+                                        <button type="submit" class="action-button">Mark as Returned</button>
+                                    </form>
+                                @endif
+                                @if($borrowedBook->late_fee > 0)
+                                    <form action="{{ route('admin.markAsPaid', $borrowedBook) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        @method('POST')
+                                        <button type="submit" class="paid-button">Mark as Paid</button>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
     </div>
 
+    <!-- Genres Section -->
     <div class="section">
-        <h2>Genres</h2>
+        <h2>Manage Genres</h2>
         <a href="{{ route('admin.genres.create') }}"><button class="button">Add New Genre</button></a>
-        <table>
-            <thead>
-                <tr>
-                    <th>Genre Name</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($genres as $genre)
+        @if($genres->isEmpty())
+            <p class="note">No genres available.</p>
+        @else
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ $genre->name }}</td>
-                        <td>
-                            <a href="{{ route('admin.genres.edit', $genre) }}"><button class="action-button">Edit</button></a>
-                            <form action="{{ route('admin.genres.destroy', $genre) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="action-button" onclick="return confirm('Are you sure you want to delete this genre?');">Delete</button>
-                            </form>
-                        </td>
+                        <th>Genre Name</th>
+                        <th>Actions</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach($genres as $genre)
+                        <tr>
+                            <td>{{ $genre->name }}</td>
+                            <td>
+                                <a href="{{ route('admin.genres.edit', $genre) }}"><button class="action-button">Edit</button></a>
+                                <form action="{{ route('admin.genres.destroy', $genre) }}" method="POST" style="display:inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="action-button" onclick="return confirm('Are you sure you want to delete this genre?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
     </div>
 </body>
 </html>

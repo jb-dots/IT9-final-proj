@@ -276,7 +276,7 @@
                         <p>{{ $book->author ?? 'Unknown Author' }}</p>
                     </div>
                 </div>
-                <form action="{{ route('books.borrow', $book->id) }}" method="POST">
+                <form action="{{ route('catalogs.borrow.store', $book->id) }}" method="POST">
                     @csrf
                     <div class="form-group">
                         <label for="borrow_days">Borrow Duration (days)</label>

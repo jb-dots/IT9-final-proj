@@ -6,15 +6,19 @@ use App\Models\Book;
 use App\Models\Genre;
 use App\Models\BorrowedBook;
 use App\Models\Transaction;
+use App\Models\StockHistory;
+use App\Models\Supplier;
+use App\Models\StockIn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class AdminController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('admin'); // Apply the admin middleware to all methods
+        // Removed 'admin' middleware; handled by route middleware 'role:admin' in web.php
     }
 
     public function index()
@@ -22,10 +26,10 @@ class AdminController extends Controller
         $lateFeePerDay = 0.50; // $0.50 per day late
 
         // Fetch all books
-        $books = Book::with('genre')->get();
+        $books = Book::with('genres')->get();
 
         // Fetch all genres
-        $genres = \App\Models\Genre::orderBy('name')->get();
+        $genres = Genre::orderBy('name')->get();
 
         // Fetch borrowed books with user information
         $borrowedBooks = BorrowedBook::with(['book', 'user'])
@@ -66,18 +70,30 @@ class AdminController extends Controller
                 'publisher' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
                 'cover_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'genre_id' => 'required|exists:genres,id',
+                'genre_ids' => 'required|array',
+                'genre_ids.*' => 'exists:genres,id',
+                'quantity' => 'required|integer|min:0',
             ]);
 
             $coverImagePath = $request->file('cover_image')->store('images', 'public');
 
-            Book::create([
+            $book = Book::create([
                 'title' => $request->title,
                 'author' => $request->author,
                 'publisher' => $request->publisher,
                 'description' => $request->description,
                 'cover_image' => $coverImagePath,
-                'genre_id' => $request->genre_id,
+                'quantity' => $request->quantity,
+            ]);
+
+            $book->genres()->sync($request->genre_ids);
+
+            // Log the initial stock addition
+            StockHistory::create([
+                'book_id' => $book->id,
+                'quantity_change' => $request->quantity,
+                'action' => 'stock_in',
+                'performed_by' => Auth::user()->email,
             ]);
 
             return redirect()->route('admin.index')->with('success', 'Book added successfully.');
@@ -98,14 +114,18 @@ class AdminController extends Controller
             $request->validate([
                 'title' => 'required|string|max:255',
                 'author' => 'nullable|string|max:255',
+                'publisher' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
                 'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'genre_id' => 'required|exists:genres,id',
+                'genre_ids' => 'required|array',
+                'genre_ids.*' => 'exists:genres,id',
             ]);
 
             $data = [
                 'title' => $request->title,
                 'author' => $request->author,
-                'genre_id' => $request->genre_id,
+                'publisher' => $request->publisher,
+                'description' => $request->description,
             ];
 
             if ($request->hasFile('cover_image')) {
@@ -118,13 +138,14 @@ class AdminController extends Controller
 
             $book->update($data);
 
+            $book->genres()->sync($request->genre_ids);
+
             return redirect()->route('admin.index')->with('success', 'Book updated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to update book: ' . $e->getMessage());
         }
     }
 
-// app/Http/Controllers/AdminController.php
     public function updateBorrowStatus(Request $request, BorrowedBook $borrowedBook)
     {
         try {
@@ -137,6 +158,14 @@ class AdminController extends Controller
                 $book = $borrowedBook->book;
                 $book->quantity += 1;
                 $book->save();
+
+                // Log the stock change
+                StockHistory::create([
+                    'book_id' => $book->id,
+                    'quantity_change' => 1,
+                    'action' => 'stock_in',
+                    'performed_by' => Auth::user()->email,
+                ]);
             }
 
             $borrowedBook->update([
@@ -174,106 +203,58 @@ class AdminController extends Controller
             return redirect()->route('admin.index')->with('error', 'Failed to mark late fee as paid: ' . $e->getMessage());
         }
     }
+
     public function adjustStock(Book $book)
     {
-        $stockIns = \App\Models\StockIn::where('book_id', $book->id)
-            ->with('supplier')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $stockOuts = \App\Models\StockOut::where('book_id', $book->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $suppliers = \App\Models\Supplier::orderBy('name')->get();
-
-        return view('admin.adjust-stock', compact('book', 'stockIns', 'stockOuts', 'suppliers'));
+        $stockHistories = $book->stockHistories()->orderBy('created_at', 'desc')->get();
+        $suppliers = Supplier::orderBy('name')->get();
+        return view('admin.adjust-stock', compact('book', 'stockHistories', 'suppliers'));
     }
 
-    public function stockIn(Request $request, Book $book)
+    public function updateStock(Request $request, Book $book)
     {
         try {
             $request->validate([
-                'supplier_id' => 'required|exists:suppliers,id',
-                'quantity' => 'required|integer|min:1',
+                'quantity_change' => 'required|integer',
+                'action' => 'required|in:stock_in,stock_out',
+                'supplier_id' => 'required_if:action,stock_in|exists:suppliers,id',
             ]);
 
-            $quantity = $request->input('quantity');
-            $supplierId = $request->input('supplier_id');
+            $quantityChange = $request->quantity_change;
+            $action = $request->action;
 
-            $book->quantity += $quantity;
-            $book->save();
-
-            $userName = auth()->user() ? auth()->user()->name : 'Unknown';
-
-            \App\Models\StockIn::create([
-                'book_id' => $book->id,
-                'supplier_id' => $supplierId,
-                'quantity' => $quantity,
-                'performed_by' => $userName,
-            ]);
-
-            return redirect()->route('admin.adjustStock', $book)->with('success', 'Stock in recorded successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to record stock in: ' . $e->getMessage());
-        }
-    }
-
-    public function stockOut(Request $request, Book $book)
-    {
-        try {
-            $request->validate([
-                'quantity' => 'required|integer|min:1',
-            ]);
-
-            $quantity = $request->input('quantity');
-
-            if ($quantity > $book->quantity) {
-                return redirect()->back()->with('error', 'Cannot stock out more books than available.');
+            if ($action === 'stock_in') {
+                $book->quantity += $quantityChange;
+            } elseif ($action === 'stock_out') {
+                $newQuantity = $book->quantity - $quantityChange;
+                if ($newQuantity < 0) {
+                    return redirect()->back()->with('error', 'Cannot stock out more books than available.');
+                }
+                $book->quantity = $newQuantity;
             }
 
-            $book->quantity -= $quantity;
             $book->save();
 
-            $userName = auth()->user() ? auth()->user()->name : 'Unknown';
-
-            \App\Models\StockOut::create([
+            // Log the stock change
+            StockHistory::create([
                 'book_id' => $book->id,
-                'quantity' => $quantity,
-                'performed_by' => $userName,
+                'quantity_change' => $action === 'stock_in' ? $quantityChange : -$quantityChange,
+                'action' => $action,
+                'performed_by' => Auth::user()->email,
             ]);
 
-            return redirect()->route('admin.adjustStock', $book)->with('success', 'Stock out recorded successfully.');
+            if ($action === 'stock_in') {
+                \App\Models\StockIn::create([
+                    'book_id' => $book->id,
+                    'supplier_id' => $request->supplier_id,
+                    'quantity' => $quantityChange,
+                    'performed_by' => Auth::user()->email,
+                ]);
+            }
+
+            return redirect()->route('admin.index')->with('success', 'Book stock updated successfully.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to record stock out: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update stock: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Show the form to create a new supplier.
-     */
-    public function createSupplier()
-    {
-        return view('admin.add-supplier');
-    }
-
-    /**
-     * Store a new supplier in the database.
-     */
-    public function storeSupplier(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|unique:suppliers,name|max:255',
-            'address' => 'nullable|string|max:255',
-            'contact_number' => 'nullable|string|max:50',
-        ]);
-
-        \App\Models\Supplier::create([
-            'name' => $request->input('name'),
-            'address' => $request->input('address'),
-            'contact_number' => $request->input('contact_number'),
-        ]);
-
-        return redirect()->route('admin.suppliers.create')->with('success', 'Supplier added successfully.');
     }
 }
